@@ -552,7 +552,7 @@ export const PartyRoom: React.FC = () => {
                           <div className="reveal-avatar">{(u.displayName || '?')[0].toUpperCase()}</div>
                           <span className="reveal-name">{u.displayName}</span>
                           <div className="reveal-dual-scores">
-                            {SCORE_CATEGORIES.map(({ key, label, icon: Icon, color }) => (
+                            {SCORE_CATEGORIES.map(({ key, icon: Icon, color }) => (
                               <div key={key} className="reveal-score-category">
                                 <Icon size={11} style={{ color }} />
                                 <span className="reveal-score">{u.score?.[key] ?? '—'}</span>
