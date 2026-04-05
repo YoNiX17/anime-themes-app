@@ -185,21 +185,45 @@ export const Profile: React.FC = () => {
     return () => { unsubAvatar(); unsubAnime(); unsubTheme(); };
   }, [user, navigate]);
 
-  // ── Avatar upload (base64 in RTDB, < 50KB) ──
+  // ── Avatar upload (base64 in RTDB) ──
+  const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      showToast("Format non supporté (JPG, PNG ou WebP).", "error");
+      return;
+    }
     if (file.size > 200_000) {
       showToast("Image trop lourde (max 200 Ko).", "error");
       return;
     }
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const dataUrl = reader.result as string;
-      await set(ref(db, `users/${user.uid}/profile/avatarUrl`), dataUrl);
-      showToast("Photo de profil mise à jour !", "success");
+    // Validate it's a real image by loading it
+    const objectUrl = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      if (img.width < 50 || img.height < 50 || img.width > 4096 || img.height > 4096) {
+        showToast("Dimensions invalides (50-4096px).", "error");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const dataUrl = reader.result as string;
+        if (!dataUrl.startsWith('data:image/')) {
+          showToast("Fichier invalide.", "error");
+          return;
+        }
+        await set(ref(db, `users/${user.uid}/profile/avatarUrl`), dataUrl);
+        showToast("Photo de profil mise à jour !", "success");
+      };
+      reader.readAsDataURL(file);
     };
-    reader.readAsDataURL(file);
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      showToast("Fichier image invalide.", "error");
+    };
+    img.src = objectUrl;
   };
 
   // ── Delete rating ──

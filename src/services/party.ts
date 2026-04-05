@@ -185,9 +185,12 @@ export const setUserReady = async (roomId: string, userId: string, ready: boolea
  * User submits their scores (0-100 per category) during voting
  */
 export const submitScore = async (roomId: string, userId: string, scores: ThemeScore) => {
+  const m = Number(scores.music);
+  const a = Number(scores.animation);
+  if (isNaN(m) || isNaN(a)) throw new Error('Invalid scores');
   await set(ref(db, `parties/${roomId}/users/${userId}/score`), {
-    music: Math.round(Math.max(0, Math.min(100, scores.music))),
-    animation: Math.round(Math.max(0, Math.min(100, scores.animation))),
+    music: Math.round(Math.max(0, Math.min(100, m))),
+    animation: Math.round(Math.max(0, Math.min(100, a))),
   });
 };
 

@@ -1,0 +1,90 @@
+{
+  "rules": {
+    "ratings": {
+      "$animeId": {
+        ".read": true,
+        "meta": {
+          ".write": "auth != null"
+        },
+        "users": {
+          "$userId": {
+            ".write": "auth != null && auth.uid == $userId",
+            ".validate": "newData.hasChildren(['plot','characters','animation','ost','pacing'])",
+            "plot": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" },
+            "characters": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" },
+            "animation": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" },
+            "ost": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" },
+            "pacing": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" }
+          }
+        }
+      }
+    },
+
+    "themeRatings": {
+      "$themeId": {
+        ".read": true,
+        "meta": {
+          ".write": "auth != null"
+        },
+        "users": {
+          "$userId": {
+            ".write": "auth != null && auth.uid == $userId",
+            ".validate": "newData.hasChildren(['music','animation'])",
+            "music": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" },
+            "animation": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" }
+          }
+        }
+      }
+    },
+
+    "parties": {
+      "$roomId": {
+        ".read": true,
+        ".write": "auth != null",
+        "users": {
+          "$userId": {
+            ".write": "auth != null && auth.uid == $userId",
+            "score": {
+              "music": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" },
+              "animation": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" }
+            }
+          }
+        },
+        "chat": {
+          "$msgId": {
+            ".validate": "auth.uid == newData.child('userId').val() && newData.child('text').isString() && newData.child('text').val().length <= 500"
+          }
+        }
+      }
+    },
+
+    "users": {
+      "$userId": {
+        ".read": "auth != null && auth.uid == $userId",
+        ".write": "auth != null && auth.uid == $userId",
+        "profile": {
+          "avatarUrl": {
+            ".validate": "newData.isString() && newData.val().length < 300000"
+          }
+        },
+        "ratings": {
+          "$animeId": {
+            ".validate": "newData.hasChildren(['plot','characters','animation','ost','pacing','animeName','timestamp'])",
+            "plot": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" },
+            "characters": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" },
+            "animation": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" },
+            "ost": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" },
+            "pacing": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" }
+          }
+        },
+        "themeRatings": {
+          "$themeId": {
+            ".validate": "newData.hasChildren(['music','animation','animeName','timestamp'])",
+            "music": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" },
+            "animation": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" }
+          }
+        }
+      }
+    }
+  }
+}
