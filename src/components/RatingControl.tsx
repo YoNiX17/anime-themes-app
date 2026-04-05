@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BookOpen, Users as UsersIcon, Palette, Music, Timer, Save, Check, Clapperboard, UserCheck, Film } from 'lucide-react';
+import { BookOpen, Users as UsersIcon, Palette, Music, Timer, Save, Check, Clapperboard, UserCheck } from 'lucide-react';
 import { ref, set, onValue, get } from 'firebase/database';
 import { db } from '../services/firebase';
 import { useAuth } from '../contexts/AuthContext';

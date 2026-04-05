@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Star, Clock, Calendar, Play, ExternalLink, Sparkles, Users as UsersIcon } from 'lucide-react';
+import { ArrowLeft, Star, Clock, Calendar, Play, Sparkles, Users as UsersIcon } from 'lucide-react';
 import { ref, get } from 'firebase/database';
 import { db } from '../services/firebase';
 import { useAuth } from '../contexts/AuthContext';
