@@ -3,7 +3,7 @@ import {
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
   updateProfile,
-  signInWithPopup
+  signInWithRedirect
 } from 'firebase/auth';
 import { auth, googleProvider } from '../services/firebase';
 import { X, Mail, Lock, User as UserIcon } from 'lucide-react';
@@ -48,13 +48,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     setError('');
     setLoading(true);
     try {
-      await signInWithPopup(auth, googleProvider);
-      onClose();
+      await signInWithRedirect(auth, googleProvider);
     } catch (err: any) {
-      if (err.code !== 'auth/popup-closed-by-user') {
-        setError(err.message || 'La connexion Google a échoué.');
-      }
-    } finally {
+      setError(err.message || 'La connexion Google a échoué.');
       setLoading(false);
     }
   };
@@ -103,6 +99,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                 required 
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
+                autoComplete="username"
               />
             </div>
           )}
@@ -115,6 +112,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               required 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
             />
           </div>
 
@@ -127,6 +125,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               minLength={6}
+              autoComplete={isLogin ? 'current-password' : 'new-password'}
             />
           </div>
 
