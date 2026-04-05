@@ -303,7 +303,7 @@ export const Profile: React.FC = () => {
 
   return (
     <div className="profile-container">
-      <Header onSearch={() => navigate('/')} />
+      <Header />
 
       <main className="profile-main">
         {/* Hero / User info */}

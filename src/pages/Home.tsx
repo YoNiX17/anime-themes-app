@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Sparkles, TrendingUp, Crown, Users } from 'lucide-react';
+import { TrendingUp, Crown, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { AnimeCard } from '../components/AnimeCard';
 import { Loader } from '../components/Loader';
 import { useToast } from '../components/Toast';
-import { fetchThisSeason, fetchPopularAnime, searchAnime } from '../services/api';
+import { fetchThisSeason, fetchPopularAnime } from '../services/api';
 import { createPartyRoom } from '../services/party';
 import { useAuth } from '../contexts/AuthContext';
 import type { Anime } from '../services/api';
@@ -13,11 +13,9 @@ import type { Anime } from '../services/api';
 export const Home: React.FC = () => {
   const [seasonAnimes, setSeasonAnimes] = useState<Anime[]>([]);
   const [popularAnimes, setPopularAnimes] = useState<Anime[]>([]);
-  const [searchResults, setSearchResults] = useState<Anime[]>([]);
   const [loadingSeason, setLoadingSeason] = useState(true);
   const [loadingPopular, setLoadingPopular] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isSearchResult, setIsSearchResult] = useState(false);
   
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -29,9 +27,7 @@ export const Home: React.FC = () => {
 
   const loadBothSections = async () => {
     setError(null);
-    setIsSearchResult(false);
 
-    // Load both sections in parallel
     setLoadingSeason(true);
     setLoadingPopular(true);
 
@@ -44,27 +40,6 @@ export const Home: React.FC = () => {
       .then(data => setPopularAnimes(data))
       .catch(err => { console.error(err); })
       .finally(() => setLoadingPopular(false));
-  };
-
-  const handleSearch = async (query: string) => {
-    if (!query.trim()) {
-      setIsSearchResult(false);
-      setSearchResults([]);
-      return;
-    }
-    
-    try {
-      setLoadingSeason(true);
-      setError(null);
-      setIsSearchResult(true);
-      const data = await searchAnime(query);
-      setSearchResults(data);
-    } catch (err) {
-      console.error(err);
-      setError('La recherche a échoué. Réessaie plus tard.');
-    } finally {
-      setLoadingSeason(false);
-    }
   };
 
   const handleCreateParty = async () => {
@@ -86,9 +61,9 @@ export const Home: React.FC = () => {
 
   return (
     <>
-      <Header onSearch={handleSearch} />
+      <Header />
       
-      {!isLoading && !error && !isSearchResult && (
+      {!isLoading && !error && (
         <section className="hero-section">
           <div className="hero-badge">
             <span className="badge-dot"></span>
@@ -111,38 +86,7 @@ export const Home: React.FC = () => {
       )}
 
       <main className="main-content">
-        {isSearchResult ? (
-          // Search results
-          <>
-            {loadingSeason ? (
-              <Loader />
-            ) : searchResults.length === 0 ? (
-              <div className="empty-state glass-panel">
-                <Sparkles size={32} style={{ marginBottom: '1rem', color: 'var(--accent-primary-light)' }} />
-                <p>Aucun anime trouvé. Essaie un autre terme de recherche.</p>
-              </div>
-            ) : (
-              <>
-                <div className="section-header">
-                  <div className="section-header-left">
-                    <div className="section-icon">
-                      <Sparkles size={20} />
-                    </div>
-                    <h2 className="section-title">Résultats de recherche</h2>
-                    <span className="section-count">{searchResults.length} trouvé{searchResults.length > 1 ? 's' : ''}</span>
-                  </div>
-                </div>
-                <div className="anime-grid">
-                  {searchResults.map((anime, index) => (
-                    <div key={anime.id} className="anime-grid-item" style={{ animationDelay: `${index * 0.04}s` }}>
-                      <AnimeCard anime={anime} />
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-          </>
-        ) : error ? (
+        {error ? (
           <div className="error-message glass-panel">
             <p>{error}</p>
             <button onClick={loadBothSections} className="retry-button">Réessayer</button>

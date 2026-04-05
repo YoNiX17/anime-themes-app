@@ -1,22 +1,20 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { Search, Play, User as UserIcon, LogOut, Loader2, Trophy, UserCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, Play, User as UserIcon, LogOut, Trophy, UserCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { AuthModal } from './AuthModal';
 import './Header.css';
 
 interface HeaderProps {
-  onSearch: (query: string) => void;
+  initialQuery?: string;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onSearch }) => {
-  const [query, setQuery] = useState('');
+export const Header: React.FC<HeaderProps> = ({ initialQuery = '' }) => {
+  const [query, setQuery] = useState(initialQuery);
   const [scrolled, setScrolled] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [isSearching, setIsSearching] = useState(false);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -24,40 +22,16 @@ export const Header: React.FC<HeaderProps> = ({ onSearch }) => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Cleanup debounce timer on unmount to prevent memory leak
-  useEffect(() => {
-    return () => {
-      if (debounceTimer.current) clearTimeout(debounceTimer.current);
-    };
-  }, []);
-
-  const debouncedSearch = useCallback((value: string) => {
-    if (debounceTimer.current) clearTimeout(debounceTimer.current);
-    
-    if (!value.trim()) {
-      setIsSearching(false);
-      onSearch('');
-      return;
-    }
-
-    setIsSearching(true);
-    debounceTimer.current = setTimeout(() => {
-      onSearch(value);
-      setIsSearching(false);
-    }, 400);
-  }, [onSearch]);
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setQuery(value);
-    debouncedSearch(value);
+    setQuery(e.target.value);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (debounceTimer.current) clearTimeout(debounceTimer.current);
-    setIsSearching(false);
-    onSearch(query);
+    const trimmed = query.trim();
+    if (trimmed) {
+      navigate(`/search?q=${encodeURIComponent(trimmed)}`);
+    }
   };
 
   return (
@@ -84,11 +58,7 @@ export const Header: React.FC<HeaderProps> = ({ onSearch }) => {
                 className="search-input"
                 aria-label="Rechercher un anime"
               />
-              {isSearching ? (
-                <Loader2 className="search-icon search-spinner" size={18} />
-              ) : (
-                <Search className="search-icon" size={18} />
-              )}
+              <Search className="search-icon" size={18} />
             </div>
           </form>
 

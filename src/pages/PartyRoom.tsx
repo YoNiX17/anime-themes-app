@@ -287,7 +287,7 @@ export const PartyRoom: React.FC = () => {
   if (!user) {
     return (
       <div className="party-room-container">
-        <Header onSearch={() => {}} />
+        <Header />
         <div className="glass-panel party-auth-msg">
           <Users size={40} style={{ color: 'var(--accent-primary-light)', marginBottom: '1rem' }} />
           <h2>Connexion requise</h2>
@@ -307,7 +307,7 @@ export const PartyRoom: React.FC = () => {
 
   return (
     <div className="party-room-container">
-      <Header onSearch={() => navigate('/')} />
+      <Header />
       
       <main className="party-main-content">
         {/* ═══ Header ═══ */}

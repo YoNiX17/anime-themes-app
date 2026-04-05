@@ -278,87 +278,210 @@ const THEMES_INCLUDE = 'animethemes.animethemeentries.videos,images';
  * This handles cases where Jikan and AnimeThemes don't understand abbreviations
  */
 const ABBREVIATIONS: Record<string, string> = {
-  // Popular abbreviations
-  'snk': 'Shingeki no Kyojin',
-  'aot': 'Shingeki no Kyojin',
-  'kny': 'Kimetsu no Yaiba',
-  'ds': 'Kimetsu no Yaiba',
+  // Attack on Titan / SNK
+  'snk': 'Shingeki no Kyojin', 'aot': 'Shingeki no Kyojin',
+  'attack on titan': 'Shingeki no Kyojin',
+  'aoe': 'Shingeki no Kyojin The Final Season',
+  // Demon Slayer / KNY
+  'kny': 'Kimetsu no Yaiba', 'ds': 'Kimetsu no Yaiba',
   'demon slayer': 'Kimetsu no Yaiba',
+  // JJK
   'jjk': 'Jujutsu Kaisen',
-  'mha': 'Boku no Hero Academia',
-  'bnha': 'Boku no Hero Academia',
+  // My Hero Academia
+  'mha': 'Boku no Hero Academia', 'bnha': 'Boku no Hero Academia',
+  'my hero': 'Boku no Hero Academia', 'my hero academia': 'Boku no Hero Academia',
+  // SAO
   'sao': 'Sword Art Online',
+  // One Punch Man
   'opm': 'One Punch Man',
-  'fma': 'Fullmetal Alchemist',
-  'fmab': 'Fullmetal Alchemist Brotherhood',
+  // Fullmetal Alchemist
+  'fma': 'Fullmetal Alchemist', 'fmab': 'Fullmetal Alchemist Brotherhood',
+  // Hunter x Hunter
   'hxh': 'Hunter x Hunter',
-  'dn': 'Death Note',
+  // Death Note
+  'dn': 'Death Note', 'death note': 'Death Note',
+  // Chainsaw Man
   'csm': 'Chainsaw Man',
+  // One Piece
   'op': 'One Piece',
+  // Re:Zero
   'rezero': 'Re:Zero kara Hajimeru Isekai Seikatsu',
   're zero': 'Re:Zero kara Hajimeru Isekai Seikatsu',
   're:zero': 'Re:Zero kara Hajimeru Isekai Seikatsu',
+  // KonoSuba
   'konosuba': 'Kono Subarashii Sekai ni Shukufuku wo',
-  'aoe': 'Shingeki no Kyojin The Final Season',
+  // Black Clover
   'bc': 'Black Clover',
-  'mp100': 'Mob Psycho 100',
-  'cg': 'Code Geass',
-  'eva': 'Neon Genesis Evangelion',
-  'nge': 'Neon Genesis Evangelion',
+  // Mob Psycho
+  'mp100': 'Mob Psycho 100', 'mob psycho': 'Mob Psycho 100',
+  // Code Geass
+  'cg': 'Code Geass', 'code geass': 'Code Geass',
+  // Evangelion
+  'eva': 'Neon Genesis Evangelion', 'nge': 'Neon Genesis Evangelion',
+  'evangelion': 'Neon Genesis Evangelion',
+  // Cowboy Bebop
   'cb': 'Cowboy Bebop',
-  'dbz': 'Dragon Ball Z',
-  'dbs': 'Dragon Ball Super',
-  'db': 'Dragon Ball',
-  'fate': 'Fate/stay night',
-  'fsn': 'Fate/stay night',
-  'fz': 'Fate/Zero',
-  'sxf': 'Spy x Family',
-  'spy family': 'Spy x Family',
-  'spy x family': 'Spy x Family',
+  // Dragon Ball
+  'dbz': 'Dragon Ball Z', 'dbs': 'Dragon Ball Super', 'db': 'Dragon Ball',
+  'dragon ball': 'Dragon Ball',
+  // Fate
+  'fate': 'Fate/stay night', 'fsn': 'Fate/stay night', 'fz': 'Fate/Zero',
+  'fate zero': 'Fate/Zero', 'fate stay night': 'Fate/stay night',
+  'ubw': 'Fate/stay night: Unlimited Blade Works',
+  // Spy x Family
+  'sxf': 'Spy x Family', 'spy family': 'Spy x Family', 'spy x family': 'Spy x Family',
+  // Frieren
   'frieren': 'Sousou no Frieren',
-  'oshi no ko': 'Oshi no Ko',
-  'onk': 'Oshi no Ko',
+  // Oshi no Ko
+  'oshi no ko': 'Oshi no Ko', 'onk': 'Oshi no Ko',
+  // Shield Hero
   'shield hero': 'Tate no Yuusha no Nariagari',
-  'mushoku': 'Mushoku Tensei',
-  'mt': 'Mushoku Tensei',
-  'slime': 'Tensei Shitara Slime Datta Ken',
-  'tensura': 'Tensei Shitara Slime Datta Ken',
-  'dr stone': 'Dr. Stone',
-  'drstone': 'Dr. Stone',
-  'Tokyo ghoul': 'Tokyo Ghoul',
-  'tg': 'Tokyo Ghoul',
-  'ttgl': 'Tengen Toppa Gurren Lagann',
-  'gurren lagann': 'Tengen Toppa Gurren Lagann',
+  // Mushoku Tensei
+  'mushoku': 'Mushoku Tensei', 'mt': 'Mushoku Tensei',
+  'mushoku tensei': 'Mushoku Tensei',
+  // Slime
+  'slime': 'Tensei Shitara Slime Datta Ken', 'tensura': 'Tensei Shitara Slime Datta Ken',
+  // Dr. Stone
+  'dr stone': 'Dr. Stone', 'drstone': 'Dr. Stone',
+  // Tokyo Ghoul
+  'tokyo ghoul': 'Tokyo Ghoul', 'tg': 'Tokyo Ghoul',
+  // Gurren Lagann
+  'ttgl': 'Tengen Toppa Gurren Lagann', 'gurren lagann': 'Tengen Toppa Gurren Lagann',
+  // Kill la Kill
   'klk': 'Kill la Kill',
-  'sg': 'Steins;Gate',
-  'steins gate': 'Steins;Gate',
-  'steinsgate': 'Steins;Gate',
-  'yba': 'Jojo no Kimyou na Bouken',
-  'jojo': 'Jojo no Kimyou na Bouken',
+  // Steins;Gate
+  'sg': 'Steins;Gate', 'steins gate': 'Steins;Gate', 'steinsgate': 'Steins;Gate',
+  // JoJo
+  'yba': 'Jojo no Kimyou na Bouken', 'jojo': 'Jojo no Kimyou na Bouken',
   'jjba': 'Jojo no Kimyou na Bouken',
   'sbr': 'Jojo no Kimyou na Bouken Part 7 Steel Ball Run',
+  // Solo Leveling
   'solo leveling': 'Ore dake Level Up na Ken',
+  // Bocchi
   'bocchi': 'Bocchi the Rock',
+  // Dandadan
   'dandadan': 'Dandadan',
+  // Blue Lock
   'blue lock': 'Blue Lock',
+  // Vinland Saga
   'vinland': 'Vinland Saga',
+  // Berserk
   'berserk': 'Berserk',
-  'bleach': 'Bleach',
-  'naruto': 'Naruto',
+  // Bleach
+  'bleach': 'Bleach', 'tybw': 'Bleach: Sennen Kessen-hen',
+  // Naruto
+  'naruto': 'Naruto', 'ns': 'Naruto Shippuuden', 'naruto shippuden': 'Naruto Shippuuden',
+  // InuYasha
   'inuyasha': 'InuYasha',
-  'made in abyss': 'Made in Abyss',
-  'mia': 'Made in Abyss',
+  // Made in Abyss
+  'made in abyss': 'Made in Abyss', 'mia': 'Made in Abyss',
+  // Overlord
   'overlord': 'Overlord',
-  'kaguya': 'Kaguya-sama wa Kokurasetai',
-  'love is war': 'Kaguya-sama wa Kokurasetai',
+  // Kaguya
+  'kaguya': 'Kaguya-sama wa Kokurasetai', 'love is war': 'Kaguya-sama wa Kokurasetai',
+  // Toradora
+  'toradora': 'Toradora!',
+  // Your Name / Kimi no Na wa
+  'your name': 'Kimi no Na wa.', 'kimi no na wa': 'Kimi no Na wa.',
+  // Sword of the Stranger
+  'classroom of the elite': 'Youkoso Jitsuryoku Shijou Shugi no Kyoushitsu e',
+  'cote': 'Youkoso Jitsuryoku Shijou Shugi no Kyoushitsu e',
+  // AOT variants
+  'aot s2': 'Shingeki no Kyojin Season 2',
+  'aot s3': 'Shingeki no Kyojin Season 3',
+  'aot s4': 'Shingeki no Kyojin The Final Season',
+  // Demon Slayer variants
+  'kny s2': 'Kimetsu no Yaiba: Yuukaku-hen',
+  'kny s3': 'Kimetsu no Yaiba: Katanakaji no Sato-hen',
+  // Popular recent
+  'nier': 'NieR:Automata Ver1.1a',
+  'cyberpunk': 'Cyberpunk: Edgerunners',
+  'edgerunners': 'Cyberpunk: Edgerunners',
+  'ranking of kings': 'Ousama Ranking',
+  'ousama ranking': 'Ousama Ranking',
+  'odd taxi': 'Odd Taxi',
+  'wonder egg': 'Wonder Egg Priority',
+  'wonder egg priority': 'Wonder Egg Priority',
+  'bunny girl': 'Seishun Buta Yarou wa Bunny Girl Senpai no Yume wo Minai',
+  'bunny girl senpai': 'Seishun Buta Yarou wa Bunny Girl Senpai no Yume wo Minai',
+  'tower of god': 'Kami no Tou',
+  'tog': 'Kami no Tou',
+  'rent a girlfriend': 'Kanojo, Okarishimasu',
+  'kanokari': 'Kanojo, Okarishimasu',
+  'quintessential quintuplets': 'Go-toubun no Hanayome',
+  'gotoubun': 'Go-toubun no Hanayome',
+  '5toubun': 'Go-toubun no Hanayome',
+  'apothecary diaries': 'Kusuriya no Hitorigoto',
+  'kusuriya': 'Kusuriya no Hitorigoto',
+  'wind breaker': 'Wind Breaker',
+  'kaiju no 8': 'Kaijuu 8-gou',
+  'kaiju 8': 'Kaijuu 8-gou',
+  'sakamoto days': 'Sakamoto Days',
+  // Gintama
+  'gintama': 'Gintama',
+  // Haikyuu
+  'haikyuu': 'Haikyuu!!', 'haikyu': 'Haikyuu!!',
+  // Kuroko
+  'knb': 'Kuroko no Basket', 'kuroko': 'Kuroko no Basket',
+  // Assassination Classroom
+  'assclass': 'Ansatsu Kyoushitsu', 'assassination classroom': 'Ansatsu Kyoushitsu',
+  // Erased
+  'erased': 'Boku dake ga Inai Machi',
+  // Parasyte
+  'parasyte': 'Kiseijuu: Sei no Kakuritsu',
+  // Promised Neverland
+  'tpn': 'Yakusoku no Neverland', 'promised neverland': 'Yakusoku no Neverland',
+  // Tokyo Revengers
+  'tokyo revengers': 'Tokyo Revengers', 'tr': 'Tokyo Revengers',
+  // Demon Lord Retry / Eminence in Shadow
+  'eminence in shadow': 'Kage no Jitsuryokusha ni Naritakute!',
+  'shadow': 'Kage no Jitsuryokusha ni Naritakute!',
+  // 86
+  '86': '86: Eighty Six', 'eighty six': '86: Eighty Six',
+  // Violet Evergarden
+  'violet evergarden': 'Violet Evergarden', 've': 'Violet Evergarden',
+  // Psycho-Pass
+  'psycho pass': 'Psycho-Pass', 'psycho-pass': 'Psycho-Pass',
+  // Mob Psycho
+  'mob': 'Mob Psycho 100',
+  // Angel Beats
+  'angel beats': 'Angel Beats!',
+  // Your Lie in April
+  'your lie in april': 'Shigatsu wa Kimi no Uso', 'ylia': 'Shigatsu wa Kimi no Uso',
+  // No Game No Life
+  'ngnl': 'No Game No Life', 'no game no life': 'No Game No Life',
+  // Noragami
+  'noragami': 'Noragami',
+  // Akame ga Kill
+  'agk': 'Akame ga Kill!', 'akame ga kill': 'Akame ga Kill!',
+  // Fairy Tail
+  'ft': 'Fairy Tail', 'fairy tail': 'Fairy Tail',
+  // Seven Deadly Sins
+  'sds': 'Nanatsu no Taizai', 'seven deadly sins': 'Nanatsu no Taizai',
+  // Dororo
+  'dororo': 'Dororo',
+  // Fire Force
+  'fire force': 'Enen no Shouboutai',
+  // Horimiya
+  'horimiya': 'Horimiya',
+  // Fruits Basket
+  'fruits basket': 'Fruits Basket',
+  // Grand Blue
+  'grand blue': 'Grand Blue',
 };
 
 /**
- * Resolve an abbreviation to full title if known
+ * Resolve abbreviation: exact match, then partial/fuzzy match
  */
 const resolveAbbreviation = (query: string): string | null => {
   const lower = query.toLowerCase().trim();
-  return ABBREVIATIONS[lower] || null;
+  // Exact match
+  if (ABBREVIATIONS[lower]) return ABBREVIATIONS[lower];
+  // Partial match: check if query is a prefix of any key or key starts with query
+  for (const [key, val] of Object.entries(ABBREVIATIONS)) {
+    if (key.startsWith(lower) || lower.startsWith(key)) return val;
+  }
+  return null;
 };
 
 /**
@@ -456,12 +579,12 @@ export const searchAnime = async (query: string): Promise<Anime[]> => {
       .catch(() => [])
   );
 
-  // 2c. Use Jikan to resolve typos/alternate names (get top 3 matches)
+  // 2c. Use Jikan to resolve typos/alternate names (get top 5 matches)
   searchPromises.push(
     (async () => {
       try {
         const jikanRes = await fetch(
-          `https://api.jikan.moe/v4/anime?q=${encodeURIComponent(rawQuery)}&limit=3`
+          `https://api.jikan.moe/v4/anime?q=${encodeURIComponent(rawQuery)}&limit=5`
         );
         if (!jikanRes.ok) return [];
         
@@ -480,8 +603,8 @@ export const searchAnime = async (query: string): Promise<Anime[]> => {
 
         // Search AnimeThemes for each Jikan-resolved title
         const uniqueTitles = [...new Set(jikanSearches)] as string[];
-        const subPromises = uniqueTitles.slice(0, 4).map((title) =>
-          fetch(`${BASE_URL}/anime?q=${encodeURIComponent(title)}&include=${THEMES_INCLUDE}&page[size]=3`)
+        const subPromises = uniqueTitles.slice(0, 6).map((title) =>
+          fetch(`${BASE_URL}/anime?q=${encodeURIComponent(title)}&include=${THEMES_INCLUDE}&page[size]=5`)
             .then(r => r.json())
             .then(d => d.anime || [])
             .catch(() => [])

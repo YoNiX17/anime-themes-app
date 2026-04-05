@@ -203,7 +203,7 @@ export const AnimeDetail: React.FC = () => {
   if (loading) {
     return (
       <div className="detail-container">
-        <Header onSearch={(q) => navigate(`/anime/${encodeURIComponent(q)}`)} />
+        <Header />
         <Loader />
       </div>
     );
@@ -212,7 +212,7 @@ export const AnimeDetail: React.FC = () => {
   if (!anime && !detail) {
     return (
       <div className="detail-container">
-        <Header onSearch={(q) => navigate(`/anime/${encodeURIComponent(q)}`)} />
+        <Header />
         <main className="detail-main">
           <div className="detail-empty glass-panel">
             <Sparkles size={32} />
@@ -237,7 +237,7 @@ export const AnimeDetail: React.FC = () => {
 
   return (
     <div className="detail-container">
-      <Header onSearch={(q) => navigate(`/anime/${encodeURIComponent(q)}`)} />
+      <Header />
 
       {/* ===== HERO BANNER ===== */}
       <section className="detail-hero">

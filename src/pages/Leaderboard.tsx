@@ -292,7 +292,7 @@ export const Leaderboard: React.FC = () => {
 
   return (
     <div className="leaderboard-container">
-      <Header onSearch={() => navigate('/')} />
+      <Header />
 
       <main className="leaderboard-main">
         <div className="leaderboard-hero">
