@@ -570,12 +570,11 @@ export const searchAnime = async (query: string): Promise<Anime[]> => {
   // Step 1: Check abbreviation dictionary
   const abbreviationResolved = resolveAbbreviation(rawQuery);
   
-  // Step 2: Prepare all search promises in parallel
-  const searchPromises: Promise<Anime[]>[] = [];
+  // Step 2: Fast path — AnimeThemes direct searches (no rate limiting, parallel)
+  const fastPromises: Promise<Anime[]>[] = [];
 
-  // 2a. If we have an abbreviation match, search AnimeThemes with the full title
   if (abbreviationResolved) {
-    searchPromises.push(
+    fastPromises.push(
       fetch(`${BASE_URL}/anime?q=${encodeURIComponent(abbreviationResolved)}&include=${THEMES_INCLUDE}&page[size]=10`)
         .then(r => r.json())
         .then(d => d.anime || [])
@@ -583,58 +582,66 @@ export const searchAnime = async (query: string): Promise<Anime[]> => {
     );
   }
 
-  // 2b. Search AnimeThemes directly with original query
-  searchPromises.push(
+  fastPromises.push(
     fetch(`${BASE_URL}/anime?q=${encodeURIComponent(rawQuery)}&include=${THEMES_INCLUDE}&page[size]=10`)
       .then(r => r.json())
       .then(d => d.anime || [])
       .catch(() => [])
   );
 
-  // 2c. Use Jikan to resolve typos/alternate names (get top 5 matches)
-  searchPromises.push(
-    (async () => {
-      try {
-        const jikanRes = await jikanFetch(
-          `${JIKAN_BASE}/anime?q=${encodeURIComponent(rawQuery)}&limit=5`
-        );
-        if (!jikanRes.ok) return [];
-        
-        const jikanData = await jikanRes.json();
-        if (!jikanData?.data?.length) return [];
+  // Step 3: Slow path — Jikan typo resolution (single request, top 3 only)
+  const jikanPromise: Promise<Anime[]> = (async () => {
+    try {
+      const jikanRes = await jikanFetch(
+        `${JIKAN_BASE}/anime?q=${encodeURIComponent(rawQuery)}&limit=3`
+      );
+      if (!jikanRes.ok) return [];
+      
+      const jikanData = await jikanRes.json();
+      if (!jikanData?.data?.length) return [];
 
-        // For each Jikan result, search AnimeThemes with both title variants
-        const jikanSearches = jikanData.data.flatMap((entry: { title?: string; title_english?: string }) => {
-          const titles: string[] = [];
-          if (entry.title) titles.push(entry.title);
-          if (entry.title_english && entry.title_english !== entry.title) {
-            titles.push(entry.title_english);
-          }
-          return titles;
-        });
-
-        // Search AnimeThemes for each Jikan-resolved title
-        const uniqueTitles = [...new Set(jikanSearches)] as string[];
-        const subPromises = uniqueTitles.slice(0, 6).map((title) =>
-          fetch(`${BASE_URL}/anime?q=${encodeURIComponent(title)}&include=${THEMES_INCLUDE}&page[size]=5`)
-            .then(r => r.json())
-            .then(d => d.anime || [])
-            .catch(() => [])
-        );
-
-        const subResults = await Promise.all(subPromises);
-        return subResults.flat() as Anime[];
-      } catch {
-        return [];
+      // Collect unique titles from Jikan results
+      const titles = new Set<string>();
+      for (const entry of jikanData.data) {
+        if (entry.title) titles.add(entry.title);
+        if (entry.title_english && entry.title_english !== entry.title) {
+          titles.add(entry.title_english);
+        }
       }
-    })()
-  );
 
-  // Step 3: Wait for all results
-  const allResults = await Promise.all(searchPromises);
-  const merged = allResults.flat();
+      // Search AnimeThemes for up to 3 Jikan-resolved titles (parallel, fast)
+      const subPromises = [...titles].slice(0, 3).map((title) =>
+        fetch(`${BASE_URL}/anime?q=${encodeURIComponent(title)}&include=${THEMES_INCLUDE}&page[size]=5`)
+          .then(r => r.json())
+          .then(d => d.anime || [])
+          .catch(() => [])
+      );
 
-  // Step 4: Deduplicate by ID, keeping first occurrence (priority order: abbreviation > direct > jikan)
+      const subResults = await Promise.all(subPromises);
+      return subResults.flat() as Anime[];
+    } catch {
+      return [];
+    }
+  })();
+
+  // Step 4: Race — return fast results immediately if Jikan is slow
+  const fastResults = (await Promise.all(fastPromises)).flat();
+  
+  // If AnimeThemes already found results, only give Jikan 1.5s to add more
+  let jikanResults: Anime[] = [];
+  if (fastResults.length > 0) {
+    jikanResults = await Promise.race([
+      jikanPromise,
+      new Promise<Anime[]>(r => setTimeout(() => r([]), 1500)),
+    ]);
+  } else {
+    // No fast results — wait for Jikan (it might resolve typos)
+    jikanResults = await jikanPromise;
+  }
+
+  const merged = [...fastResults, ...jikanResults];
+
+  // Step 5: Deduplicate by ID, keeping first occurrence (priority: abbreviation > direct > jikan)
   const seen = new Set<number>();
   return merged.filter((a): a is Anime => {
     if (!a || !a.id || seen.has(a.id)) return false;

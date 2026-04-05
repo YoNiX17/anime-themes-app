@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ref, onValue, query, limitToLast, orderByChild } from 'firebase/database';
+import { ref, onValue, query, limitToLast, orderByChild, set } from 'firebase/database';
 import { 
   Users, Copy, Play, Search, Check, 
   Send, Smile, X, Clock, MessageCircle, Crown, Trash2, Loader2,
@@ -15,6 +15,7 @@ import {
   closePartyRoom, joinPartyPresence, saveToHistory 
 } from '../services/party';
 import { useToast } from '../components/Toast';
+import { refreshThemeRatingMeta } from '../utils/ratingMeta';
 import type { PartyRoom as PartyRoomType, PartyUser, ChatMessage, ThemeScore } from '../services/party';
 import type { Anime, AnimeTheme } from '../services/api';
 import './PartyRoom.css';
@@ -256,6 +257,35 @@ export const PartyRoom: React.FC = () => {
   const handleSubmitScore = async () => {
     if (!user || !id || hasSubmitted) return;
     await submitScore(id, user.uid, myScores);
+    // Persist to themeRatings so it appears in Profile & Leaderboard
+    const theme = room?.currentTheme;
+    if (theme) {
+      const themeId = theme.theme.id;
+      const themeSlug = `${theme.theme.type}${theme.theme.sequence || ''}`;
+      const saveData = {
+        music: myScores.music,
+        animation: myScores.animation,
+        animeName: theme.anime.name,
+        animeId: theme.anime.id,
+        themeType: theme.theme.type,
+        themeSlug,
+        timestamp: Date.now(),
+      };
+      // Save to user's personal themeRatings
+      await set(ref(db, `users/${user.uid}/themeRatings/${themeId}`), saveData);
+      // Save to global themeRatings
+      await set(ref(db, `themeRatings/${themeId}/users/${user.uid}`), {
+        music: myScores.music,
+        animation: myScores.animation,
+      });
+      // Refresh aggregated meta
+      await refreshThemeRatingMeta(themeId, {
+        animeName: theme.anime.name,
+        animeId: theme.anime.id,
+        themeType: theme.theme.type,
+        themeSlug,
+      });
+    }
     setHasSubmitted(true);
     const avg = Math.round(getScoreAvg(myScores));
     showToast(`Notes envoyées ! Moyenne : ${avg}/100`, "success");
