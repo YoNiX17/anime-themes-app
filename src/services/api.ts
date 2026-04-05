@@ -36,6 +36,178 @@ export interface Anime {
   images: Image[];
 }
 
+// ========== Jikan API types ==========
+
+export interface JikanImage {
+  image_url: string;
+  small_image_url: string;
+  large_image_url: string;
+}
+
+export interface JikanGenre {
+  mal_id: number;
+  name: string;
+}
+
+export interface JikanStudio {
+  mal_id: number;
+  name: string;
+  url: string;
+}
+
+export interface JikanRelationEntry {
+  mal_id: number;
+  type: string;
+  name: string;
+  url: string;
+}
+
+export interface JikanRelation {
+  relation: string;
+  entry: JikanRelationEntry[];
+}
+
+export interface JikanRecommendationEntry {
+  mal_id: number;
+  url: string;
+  images: { jpg: JikanImage; webp: JikanImage };
+  title: string;
+}
+
+export interface JikanStreaming {
+  name: string;
+  url: string;
+}
+
+export interface JikanStaffPosition {
+  type: string;
+  name: string;
+}
+
+export interface JikanStaffPerson {
+  mal_id: number;
+  name: string;
+  images: { jpg: { image_url: string } };
+}
+
+export interface JikanStaffEntry {
+  person: JikanStaffPerson;
+  positions: string[];
+}
+
+export interface JikanCharacterEntry {
+  character: {
+    mal_id: number;
+    name: string;
+    images: { jpg: { image_url: string }; webp: { image_url: string } };
+  };
+  role: string;
+}
+
+export interface JikanAnimeDetail {
+  mal_id: number;
+  title: string;
+  title_english: string | null;
+  title_japanese: string | null;
+  synopsis: string | null;
+  score: number;
+  scored_by: number;
+  rank: number;
+  popularity: number;
+  members: number;
+  favorites: number;
+  episodes: number | null;
+  status: string;
+  source: string;
+  duration: string;
+  rating: string;
+  season: string | null;
+  year: number | null;
+  images: { jpg: JikanImage; webp: JikanImage };
+  trailer: { youtube_id: string | null; url: string | null; embed_url: string | null };
+  genres: JikanGenre[];
+  themes: JikanGenre[];
+  studios: JikanStudio[];
+  relations: JikanRelation[];
+  streaming: JikanStreaming[];
+}
+
+export interface JikanRecommendation {
+  entry: JikanRecommendationEntry;
+}
+
+const JIKAN_BASE = 'https://api.jikan.moe/v4';
+
+/**
+ * Fetch full anime details from Jikan by MAL ID
+ */
+export const fetchJikanAnimeDetail = async (malId: number): Promise<JikanAnimeDetail | null> => {
+  try {
+    const res = await fetch(`${JIKAN_BASE}/anime/${malId}/full`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.data || null;
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Fetch anime staff from Jikan (directors, composers, etc.)
+ */
+export const fetchJikanStaff = async (malId: number): Promise<JikanStaffEntry[]> => {
+  try {
+    const res = await fetch(`${JIKAN_BASE}/anime/${malId}/staff`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.data || [];
+  } catch {
+    return [];
+  }
+};
+
+/**
+ * Fetch anime characters from Jikan
+ */
+export const fetchJikanCharacters = async (malId: number): Promise<JikanCharacterEntry[]> => {
+  try {
+    const res = await fetch(`${JIKAN_BASE}/anime/${malId}/characters`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.data || [];
+  } catch {
+    return [];
+  }
+};
+
+/**
+ * Fetch anime recommendations from Jikan
+ */
+export const fetchJikanRecommendations = async (malId: number): Promise<JikanRecommendation[]> => {
+  try {
+    const res = await fetch(`${JIKAN_BASE}/anime/${malId}/recommendations`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.data || [];
+  } catch {
+    return [];
+  }
+};
+
+/**
+ * Search Jikan by anime name and return the best match's MAL ID
+ */
+export const findMalId = async (animeName: string): Promise<number | null> => {
+  try {
+    const res = await fetch(`${JIKAN_BASE}/anime?q=${encodeURIComponent(animeName)}&limit=1`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.data?.[0]?.mal_id || null;
+  } catch {
+    return null;
+  }
+};
+
 const BASE_URL = 'https://api.animethemes.moe';
 const THEMES_INCLUDE = 'animethemes.animethemeentries.videos,images';
 

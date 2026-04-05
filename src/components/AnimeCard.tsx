@@ -1,11 +1,12 @@
 import React from 'react';
 import { Play } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import type { Anime } from '../services/api';
 import './AnimeCard.css';
 
 interface AnimeCardProps {
   anime: Anime;
-  onClick: (anime: Anime) => void;
+  onClick?: (anime: Anime) => void;
 }
 
 const SEASON_FR: Record<string, string> = {
@@ -16,6 +17,8 @@ const SEASON_FR: Record<string, string> = {
 };
 
 export const AnimeCard: React.FC<AnimeCardProps> = ({ anime, onClick }) => {
+  const navigate = useNavigate();
+
   // Prefer Large Cover for sharp images, fallback to Small Cover
   const largeCover = anime.images?.find((img) => img.facet === 'Large Cover')?.link;
   const smallCover = anime.images?.find((img) => img.facet === 'Small Cover')?.link;
@@ -27,8 +30,16 @@ export const AnimeCard: React.FC<AnimeCardProps> = ({ anime, onClick }) => {
 
   const seasonFr = anime.season ? (SEASON_FR[anime.season] || anime.season) : '';
 
+  const handleClick = () => {
+    if (onClick) {
+      onClick(anime);
+    } else {
+      navigate(`/anime/${encodeURIComponent(anime.name)}`);
+    }
+  };
+
   return (
-    <div className="anime-card" onClick={() => onClick(anime)}>
+    <div className="anime-card" onClick={handleClick}>
       <div className="card-image-wrapper">
         {coverImage ? (
           <img

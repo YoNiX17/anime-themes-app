@@ -3,7 +3,6 @@ import { Sparkles, TrendingUp, Crown, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { AnimeCard } from '../components/AnimeCard';
-import { ThemePlayerModal } from '../components/ThemePlayerModal';
 import { Loader } from '../components/Loader';
 import { useToast } from '../components/Toast';
 import { fetchThisSeason, fetchPopularAnime, searchAnime } from '../services/api';
@@ -17,7 +16,6 @@ export const Home: React.FC = () => {
   const [searchResults, setSearchResults] = useState<Anime[]>([]);
   const [loadingSeason, setLoadingSeason] = useState(true);
   const [loadingPopular, setLoadingPopular] = useState(true);
-  const [selectedAnime, setSelectedAnime] = useState<Anime | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSearchResult, setIsSearchResult] = useState(false);
   
@@ -137,7 +135,7 @@ export const Home: React.FC = () => {
                 <div className="anime-grid">
                   {searchResults.map((anime, index) => (
                     <div key={anime.id} className="anime-grid-item" style={{ animationDelay: `${index * 0.04}s` }}>
-                      <AnimeCard anime={anime} onClick={(a) => setSelectedAnime(a)} />
+                      <AnimeCard anime={anime} />
                     </div>
                   ))}
                 </div>
@@ -174,7 +172,7 @@ export const Home: React.FC = () => {
                 <div className="anime-grid">
                   {seasonAnimes.map((anime, index) => (
                     <div key={anime.id} className="anime-grid-item" style={{ animationDelay: `${index * 0.04}s` }}>
-                      <AnimeCard anime={anime} onClick={(a) => setSelectedAnime(a)} />
+                      <AnimeCard anime={anime} />
                     </div>
                   ))}
                 </div>
@@ -203,7 +201,7 @@ export const Home: React.FC = () => {
                 <div className="anime-grid">
                   {popularAnimes.map((anime, index) => (
                     <div key={anime.id} className="anime-grid-item" style={{ animationDelay: `${index * 0.04}s` }}>
-                      <AnimeCard anime={anime} onClick={(a) => setSelectedAnime(a)} />
+                      <AnimeCard anime={anime} />
                     </div>
                   ))}
                 </div>
@@ -212,13 +210,6 @@ export const Home: React.FC = () => {
           </>
         )}
       </main>
-
-      {selectedAnime && (
-        <ThemePlayerModal 
-          anime={selectedAnime} 
-          onClose={() => setSelectedAnime(null)} 
-        />
-      )}
     </>
   );
 };
