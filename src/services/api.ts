@@ -148,12 +148,24 @@ export interface JikanEpisode {
 
 const JIKAN_BASE = 'https://api.jikan.moe/v4';
 
+// Jikan rate limiter — serializes requests to respect the 3 req/s limit
+let jikanNextSlot = 0;
+const JIKAN_MIN_INTERVAL = 350;
+
+const jikanFetch = async (url: string): Promise<Response> => {
+  const now = Date.now();
+  const wait = Math.max(0, jikanNextSlot - now);
+  jikanNextSlot = Math.max(now, jikanNextSlot) + JIKAN_MIN_INTERVAL;
+  if (wait > 0) await new Promise(r => setTimeout(r, wait));
+  return fetch(url);
+};
+
 /**
  * Fetch full anime details from Jikan by MAL ID
  */
 export const fetchJikanAnimeDetail = async (malId: number): Promise<JikanAnimeDetail | null> => {
   try {
-    const res = await fetch(`${JIKAN_BASE}/anime/${malId}/full`);
+    const res = await jikanFetch(`${JIKAN_BASE}/anime/${malId}/full`);
     if (!res.ok) return null;
     const data = await res.json();
     return data.data || null;
@@ -167,7 +179,7 @@ export const fetchJikanAnimeDetail = async (malId: number): Promise<JikanAnimeDe
  */
 export const fetchJikanStaff = async (malId: number): Promise<JikanStaffEntry[]> => {
   try {
-    const res = await fetch(`${JIKAN_BASE}/anime/${malId}/staff`);
+    const res = await jikanFetch(`${JIKAN_BASE}/anime/${malId}/staff`);
     if (!res.ok) return [];
     const data = await res.json();
     return data.data || [];
@@ -181,7 +193,7 @@ export const fetchJikanStaff = async (malId: number): Promise<JikanStaffEntry[]>
  */
 export const fetchJikanCharacters = async (malId: number): Promise<JikanCharacterEntry[]> => {
   try {
-    const res = await fetch(`${JIKAN_BASE}/anime/${malId}/characters`);
+    const res = await jikanFetch(`${JIKAN_BASE}/anime/${malId}/characters`);
     if (!res.ok) return [];
     const data = await res.json();
     return data.data || [];
@@ -195,7 +207,7 @@ export const fetchJikanCharacters = async (malId: number): Promise<JikanCharacte
  */
 export const fetchJikanRecommendations = async (malId: number): Promise<JikanRecommendation[]> => {
   try {
-    const res = await fetch(`${JIKAN_BASE}/anime/${malId}/recommendations`);
+    const res = await jikanFetch(`${JIKAN_BASE}/anime/${malId}/recommendations`);
     if (!res.ok) return [];
     const data = await res.json();
     return data.data || [];
@@ -209,7 +221,7 @@ export const fetchJikanRecommendations = async (malId: number): Promise<JikanRec
  */
 export const fetchJikanEpisodes = async (malId: number, page = 1): Promise<{ episodes: JikanEpisode[]; hasMore: boolean }> => {
   try {
-    const res = await fetch(`${JIKAN_BASE}/anime/${malId}/episodes?page=${page}`);
+    const res = await jikanFetch(`${JIKAN_BASE}/anime/${malId}/episodes?page=${page}`);
     if (!res.ok) return { episodes: [], hasMore: false };
     const data = await res.json();
     return {
@@ -261,7 +273,7 @@ export const translateToFrench = async (text: string): Promise<string> => {
  */
 export const findMalId = async (animeName: string): Promise<number | null> => {
   try {
-    const res = await fetch(`${JIKAN_BASE}/anime?q=${encodeURIComponent(animeName)}&limit=1`);
+    const res = await jikanFetch(`${JIKAN_BASE}/anime?q=${encodeURIComponent(animeName)}&limit=1`);
     if (!res.ok) return null;
     const data = await res.json();
     return data.data?.[0]?.mal_id || null;
@@ -583,8 +595,8 @@ export const searchAnime = async (query: string): Promise<Anime[]> => {
   searchPromises.push(
     (async () => {
       try {
-        const jikanRes = await fetch(
-          `https://api.jikan.moe/v4/anime?q=${encodeURIComponent(rawQuery)}&limit=5`
+        const jikanRes = await jikanFetch(
+          `${JIKAN_BASE}/anime?q=${encodeURIComponent(rawQuery)}&limit=5`
         );
         if (!jikanRes.ok) return [];
         

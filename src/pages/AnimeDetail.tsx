@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, Star, Users, Tv, Clock, BookOpen, Film,
-  Play, ExternalLink, Music, Palette, Clapperboard, Sparkles, ChevronRight, Trophy, CheckCircle
+  Play, ExternalLink, Music, Palette, Clapperboard, Sparkles, ChevronRight, CheckCircle
 } from 'lucide-react';
 import { ref, get } from 'firebase/database';
 import { db } from '../services/firebase';
@@ -47,7 +47,7 @@ export const AnimeDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showPlayer, setShowPlayer] = useState(false);
   const [hasUserRating, setHasUserRating] = useState(false);
-  const [siteScore, setSiteScore] = useState<{ avg: number; count: number; rank: number } | null>(null);
+  const [siteScore, setSiteScore] = useState<{ avg: number; count: number } | null>(null);
   const [frenchSynopsis, setFrenchSynopsis] = useState<string | null>(null);
 
   useEffect(() => {
@@ -67,38 +67,31 @@ export const AnimeDetail: React.FC = () => {
     });
   }, [user, anime]);
 
-  // Fetch site ratings to compute average + rank
+  // Fetch site score from meta (lightweight, no full data read)
   useEffect(() => {
     if (!anime) { setSiteScore(null); return; }
-    get(ref(db, 'ratings')).then((snapshot) => {
-      if (!snapshot.exists()) return;
-      const data = snapshot.val();
-      const allAverages: { id: string; avg: number }[] = [];
-      Object.entries(data).forEach(([animeId, animeData]: [string, any]) => {
-        const users = animeData?.users;
-        if (!users) return;
-        const entries = Object.values(users) as Record<string, number>[];
-        let total = 0, count = 0;
-        entries.forEach((e: any) => {
-          const sum = (e.plot || 0) + (e.characters || 0) + (e.animation || 0) + (e.ost || 0) + (e.pacing || 0);
-          if (sum > 0) { total += sum; count++; }
-        });
-        if (count > 0) allAverages.push({ id: animeId, avg: total / (5 * count) });
-      });
-      allAverages.sort((a, b) => b.avg - a.avg);
-      const currentId = String(anime.id);
-      const idx = allAverages.findIndex(a => a.id === currentId);
-      if (idx >= 0) {
-        const animeUsers = data[currentId]?.users;
-        const count = animeUsers
-          ? Object.values(animeUsers).filter((e: any) =>
-              (e.plot || 0) + (e.characters || 0) + (e.animation || 0) + (e.ost || 0) + (e.pacing || 0) > 0
-            ).length
-          : 0;
-        setSiteScore({ avg: allAverages[idx].avg, count, rank: idx + 1 });
-      } else {
-        setSiteScore(null);
+
+    // Try pre-computed meta first
+    get(ref(db, `ratings/${anime.id}/meta`)).then(async (metaSnap) => {
+      if (metaSnap.exists() && metaSnap.val().avgOverall != null) {
+        const meta = metaSnap.val();
+        setSiteScore({ avg: meta.avgOverall, count: meta.count || 0 });
+        return;
       }
+
+      // Fallback: compute from this anime's user scores only
+      const usersSnap = await get(ref(db, `ratings/${anime.id}/users`));
+      if (!usersSnap.exists()) { setSiteScore(null); return; }
+
+      const entries = Object.values(usersSnap.val()) as Record<string, number>[];
+      const count = entries.length;
+      if (count === 0) { setSiteScore(null); return; }
+
+      let total = 0;
+      entries.forEach((e: Record<string, number>) => {
+        total += ((e.plot || 0) + (e.characters || 0) + (e.animation || 0) + (e.ost || 0) + (e.pacing || 0)) / 5;
+      });
+      setSiteScore({ avg: total / count, count });
     });
   }, [anime]);
 
@@ -123,12 +116,12 @@ export const AnimeDetail: React.FC = () => {
       const detailData = await fetchJikanAnimeDetail(malId);
       setDetail(detailData);
 
-      // Stagger subsequent requests by ~400ms to avoid rate limiting
+      // Rate limiting is handled automatically by jikanFetch in api.ts
       const [staffData, charsData, recsData, episodesData] = await Promise.all([
-        new Promise<JikanStaffEntry[]>(r => setTimeout(async () => r(await fetchJikanStaff(malId!)), 400)),
-        new Promise<JikanCharacterEntry[]>(r => setTimeout(async () => r(await fetchJikanCharacters(malId!)), 800)),
-        new Promise<JikanRecommendation[]>(r => setTimeout(async () => r(await fetchJikanRecommendations(malId!)), 1200)),
-        new Promise<{ episodes: JikanEpisode[]; hasMore: boolean }>(r => setTimeout(async () => r(await fetchJikanEpisodes(malId!)), 1600)),
+        fetchJikanStaff(malId),
+        fetchJikanCharacters(malId),
+        fetchJikanRecommendations(malId),
+        fetchJikanEpisodes(malId),
       ]);
       setStaff(staffData);
       setCharacters(charsData);
@@ -243,7 +236,7 @@ export const AnimeDetail: React.FC = () => {
       <section className="detail-hero">
         <div className="detail-hero-bg" style={{ backgroundImage: coverImage ? `url(${coverImage})` : undefined }} />
         <div className="detail-hero-content">
-          <button className="detail-back-btn" onClick={() => navigate(-1 as any)}>
+          <button className="detail-back-btn" onClick={() => navigate(-1)}>
             <ArrowLeft size={16} /> Retour
           </button>
 
@@ -266,9 +259,6 @@ export const AnimeDetail: React.FC = () => {
                     <span className="score-max">/ 100</span>
                   </div>
                   <span className="score-users">{siteScore.count} vote{siteScore.count > 1 ? 's' : ''} sur le site</span>
-                  <span className="detail-rank">
-                    <Trophy size={14} /> #{siteScore.rank}
-                  </span>
                 </div>
               )}
 

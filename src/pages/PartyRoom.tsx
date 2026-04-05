@@ -655,7 +655,7 @@ export const PartyRoom: React.FC = () => {
                   )}
                 </div>
                 <form onSubmit={handleSendChat} className="chat-form">
-                  <input type="text" placeholder="Message..." value={chatInput} onChange={e => setChatInput(e.target.value)} className="chat-input" maxLength={200} />
+                  <input type="text" placeholder="Message..." value={chatInput} onChange={e => setChatInput(e.target.value)} className="chat-input" maxLength={500} />
                   <button type="submit" className="chat-send-btn" disabled={!chatInput.trim()}><Send size={16} /></button>
                 </form>
               </div>

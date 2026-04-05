@@ -25,11 +25,18 @@ export const SearchResults: React.FC = () => {
     }
     setLoading(true);
     setSearched(false);
-    searchAnime(query).then((data) => {
-      setResults(data);
-      setSearched(true);
-      setLoading(false);
-    });
+    searchAnime(query)
+      .then((data) => {
+        setResults(data);
+        setSearched(true);
+      })
+      .catch(() => {
+        setResults([]);
+        setSearched(true);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, [query]);
 
   return (

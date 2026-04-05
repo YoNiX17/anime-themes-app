@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { ref, onValue, set, remove } from 'firebase/database';
+import { ref, onValue, set, remove, get } from 'firebase/database';
 import {
   User as UserIcon, Camera, BookOpen, Palette, Music, Timer, Trash2,
   Users as UsersIcon, Edit3, Save, ArrowLeft, Play, Loader2, X
@@ -10,6 +10,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Header } from '../components/Header';
 import { useToast } from '../components/Toast';
 import { getAnimeName } from '../utils/animeGrouping';
+import { refreshAnimeRatingMeta, refreshThemeRatingMeta } from '../utils/ratingMeta';
 import './Profile.css';
 
 /* ═══ Regroupement par anime ═══ */
@@ -233,13 +234,15 @@ export const Profile: React.FC = () => {
     if (!user) return;
     await remove(ref(db, `users/${user.uid}/ratings/${itemId}`));
     await remove(ref(db, `ratings/${itemId}/users/${user.uid}`));
-    showToast("Note saison supprimée.", "info");
+    await refreshAnimeRatingMeta(itemId);
+    showToast("Note saison supprim\u00e9e.", "info");
   };
 
   const handleDeleteThemeRating = async (itemId: string) => {
     if (!user) return;
     await remove(ref(db, `users/${user.uid}/themeRatings/${itemId}`));
     await remove(ref(db, `themeRatings/${itemId}/users/${user.uid}`));
+    await refreshThemeRatingMeta(itemId);
     showToast("Note OP/ED supprimée.", "info");
   };
 
@@ -251,10 +254,16 @@ export const Profile: React.FC = () => {
     const globalKey = mode === 'anime' ? 'ratings' : 'themeRatings';
 
     // Update user's personal copy
-    const existing = (await (await import('firebase/database')).get(ref(db, `users/${user.uid}/${dbKey}/${item.id}`))).val() || {};
+    const existing = (await get(ref(db, `users/${user.uid}/${dbKey}/${item.id}`))).val() || {};
     await set(ref(db, `users/${user.uid}/${dbKey}/${item.id}`), { ...existing, ...scores, timestamp: Date.now() });
     // Update global
     await set(ref(db, `${globalKey}/${item.id}/users/${user.uid}`), scores);
+    // Refresh aggregated meta
+    if (mode === 'anime') {
+      await refreshAnimeRatingMeta(item.id);
+    } else {
+      await refreshThemeRatingMeta(item.id);
+    }
     showToast("Note mise à jour !", "success");
     setEditingItem(null);
   };

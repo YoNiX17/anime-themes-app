@@ -4,6 +4,7 @@ import { ref, set, onValue, get } from 'firebase/database';
 import { db } from '../services/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from './Toast';
+import { refreshAnimeRatingMeta, refreshThemeRatingMeta } from '../utils/ratingMeta';
 import './RatingControl.css';
 
 interface AnimeRatingProps {
@@ -106,7 +107,7 @@ export const RatingControl: React.FC<RatingControlProps> = (props) => {
     });
 
     return () => unsub();
-  }, [itemId, user]);
+  }, [itemId, user, mode]);
 
   const handleSave = async () => {
     if (!user) {
@@ -129,15 +130,18 @@ export const RatingControl: React.FC<RatingControlProps> = (props) => {
       }
       await set(ref(db, `users/${user.uid}/${userDbKey}/${itemId}`), saveData);
       await set(ref(db, `${dbRootKey}/${itemId}/users/${user.uid}`), { ...scores });
-      if (mode === 'anime' && animeName) {
-        const meta: Record<string, any> = { animeName, animeId };
-        if (coverImage) meta.coverImage = coverImage;
-        if (franchise) meta.franchise = franchise;
-        await set(ref(db, `${dbRootKey}/${itemId}/meta`), meta);
-      } else if (mode === 'theme') {
-        await set(ref(db, `${dbRootKey}/${itemId}/meta`), {
-          animeName: animeName || '', animeId, themeType, themeSlug
-        });
+
+      // Update meta with basic info + computed averages
+      const metaFields: Record<string, unknown> = { animeName: animeName || '', animeId };
+      if (mode === 'anime') {
+        if (coverImage) metaFields.coverImage = coverImage;
+        if (franchise) metaFields.franchise = franchise;
+        await refreshAnimeRatingMeta(itemId, metaFields);
+      } else {
+        metaFields.themeType = themeType;
+        metaFields.themeSlug = themeSlug;
+        if (franchise) metaFields.franchise = franchise;
+        await refreshThemeRatingMeta(itemId, metaFields);
       }
       setHasExisting(true);
       setJustSaved(true);

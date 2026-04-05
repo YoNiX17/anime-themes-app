@@ -9,6 +9,24 @@ import { auth, googleProvider } from '../services/firebase';
 import { X, Mail, Lock, User as UserIcon } from 'lucide-react';
 import './AuthModal.css';
 
+const FIREBASE_ERROR_FR: Record<string, string> = {
+  'auth/invalid-email': 'Adresse email invalide.',
+  'auth/user-disabled': 'Ce compte a \u00e9t\u00e9 d\u00e9sactiv\u00e9.',
+  'auth/user-not-found': 'Aucun compte trouv\u00e9 avec cet email.',
+  'auth/wrong-password': 'Mot de passe incorrect.',
+  'auth/email-already-in-use': 'Un compte existe d\u00e9j\u00e0 avec cet email.',
+  'auth/weak-password': 'Le mot de passe doit contenir au moins 6 caract\u00e8res.',
+  'auth/too-many-requests': 'Trop de tentatives. R\u00e9essaie dans quelques minutes.',
+  'auth/network-request-failed': 'Erreur r\u00e9seau. V\u00e9rifie ta connexion.',
+  'auth/popup-closed-by-user': 'Connexion annul\u00e9e.',
+  'auth/invalid-credential': 'Identifiants invalides. V\u00e9rifie ton email et mot de passe.',
+};
+
+const getAuthErrorMessage = (err: unknown): string => {
+  const code = (err as { code?: string })?.code || '';
+  return FIREBASE_ERROR_FR[code] || 'Une erreur est survenue. R\u00e9essaie.';
+};
+
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -37,8 +55,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         await updateProfile(userCredential.user, { displayName });
       }
       onClose();
-    } catch (err: any) {
-      setError(err.message || 'Une erreur est survenue lors de l\'authentification.');
+    } catch (err: unknown) {
+      setError(getAuthErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -49,8 +67,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     setLoading(true);
     try {
       await signInWithRedirect(auth, googleProvider);
-    } catch (err: any) {
-      setError(err.message || 'La connexion Google a échoué.');
+    } catch (err: unknown) {
+      setError(getAuthErrorMessage(err));
       setLoading(false);
     }
   };

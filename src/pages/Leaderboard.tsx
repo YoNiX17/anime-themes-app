@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { ref, onValue } from 'firebase/database';
 import { Trophy, BookOpen, Palette, Music, Timer, BarChart3, Loader2, ArrowLeft, Users as UsersIcon, Play, Layers } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -286,9 +286,9 @@ export const Leaderboard: React.FC = () => {
     }
   };
 
-  const sortedAnime = getSortedAnime();
-  const sortedGroupedAnime = getSortedGroupedAnime();
-  const sortedThemes = getSortedThemes();
+  const sortedAnime = useMemo(getSortedAnime, [animeRatings, animeTab]);
+  const sortedGroupedAnime = useMemo(getSortedGroupedAnime, [animeRatings, animeTab]);
+  const sortedThemes = useMemo(getSortedThemes, [themeRatings, themeTab]);
 
   return (
     <div className="leaderboard-container">
