@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Search, Play, User as UserIcon, LogOut, Trophy, UserCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useSection } from '../contexts/SectionContext';
 import { AuthModal } from './AuthModal';
 import './Header.css';
 
@@ -9,12 +10,19 @@ interface HeaderProps {
   initialQuery?: string;
 }
 
+const SEARCH_PLACEHOLDERS: Record<string, string> = {
+  anime: 'Rechercher un anime... (ex: SAO, SNK, Naruto)',
+  films: 'Rechercher un film... (ex: Inception, Interstellar)',
+  series: 'Rechercher une série... (ex: Breaking Bad, Stranger Things)',
+};
+
 export const Header: React.FC<HeaderProps> = ({ initialQuery = '' }) => {
   const [query, setQuery] = useState(initialQuery);
   const [scrolled, setScrolled] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const section = useSection();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -30,7 +38,7 @@ export const Header: React.FC<HeaderProps> = ({ initialQuery = '' }) => {
     e.preventDefault();
     const trimmed = query.trim();
     if (trimmed) {
-      navigate(`/search?q=${encodeURIComponent(trimmed)}`);
+      navigate(`${section.prefix}/search?q=${encodeURIComponent(trimmed)}`);
     }
   };
 
@@ -45,30 +53,30 @@ export const Header: React.FC<HeaderProps> = ({ initialQuery = '' }) => {
             <div className="logo-icon-wrapper">
               <Play className="logo-icon" size={18} fill="white" />
             </div>
-            <h1 className="text-gradient">AnimeThemes</h1>
+            <h1 className="text-gradient">{section.label}</h1>
           </div>
           
           <form className="search-form" onSubmit={handleSubmit}>
             <div className="search-input-wrapper">
               <input 
                 type="text" 
-                placeholder="Rechercher un anime... (ex: SAO, SNK, Naruto)" 
+                placeholder={SEARCH_PLACEHOLDERS[section.type] || SEARCH_PLACEHOLDERS.anime}
                 value={query}
                 onChange={handleChange}
                 className="search-input"
-                aria-label="Rechercher un anime"
+                aria-label={`Rechercher dans ${section.label}`}
               />
               <Search className="search-icon" size={18} />
             </div>
           </form>
 
           <div className="header-right">
-            <button className="leaderboard-nav-btn" onClick={() => navigate('/leaderboard')} title="Classement">
+            <button className="leaderboard-nav-btn" onClick={() => navigate(`${section.prefix}/leaderboard`)} title="Classement">
               <Trophy size={16} />
               <span className="leaderboard-nav-text">Classement</span>
             </button>
             {user && (
-              <button className="leaderboard-nav-btn" onClick={() => navigate('/profile')} title="Mon profil">
+              <button className="leaderboard-nav-btn" onClick={() => navigate(`${section.prefix}/profile`)} title="Mon profil">
                 <UserCircle size={16} />
                 <span className="leaderboard-nav-text">Profil</span>
               </button>

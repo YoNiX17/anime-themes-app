@@ -7,7 +7,6 @@ import {
 import { ref, get } from 'firebase/database';
 import { db } from '../services/firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { Header } from '../components/Header';
 import { ThemePlayerModal } from '../components/ThemePlayerModal';
 import { RatingControl } from '../components/RatingControl';
 import { Loader } from '../components/Loader';
@@ -196,7 +195,6 @@ export const AnimeDetail: React.FC = () => {
   if (loading) {
     return (
       <div className="detail-container">
-        <Header />
         <Loader />
       </div>
     );
@@ -205,12 +203,11 @@ export const AnimeDetail: React.FC = () => {
   if (!anime && !detail) {
     return (
       <div className="detail-container">
-        <Header />
         <main className="detail-main">
           <div className="detail-empty glass-panel">
             <Sparkles size={32} />
             <p>Anime introuvable.</p>
-            <button className="detail-back-btn" onClick={() => navigate('/')}>
+            <button className="detail-back-btn" onClick={() => navigate('/anime')}>
               <ArrowLeft size={16} /> Retour
             </button>
           </div>
@@ -230,7 +227,6 @@ export const AnimeDetail: React.FC = () => {
 
   return (
     <div className="detail-container">
-      <Header />
 
       {/* ===== HERO BANNER ===== */}
       <section className="detail-hero">

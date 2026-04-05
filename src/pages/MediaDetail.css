@@ -1,0 +1,339 @@
+.mdetail-container {
+  min-height: 100vh;
+}
+
+/* ===== Hero ===== */
+.mdetail-hero {
+  position: relative;
+  min-height: 480px;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+}
+
+.mdetail-hero-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center top;
+  filter: blur(2px);
+}
+
+.mdetail-hero-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, var(--bg-base) 0%, rgba(6,6,11,0.85) 40%, rgba(6,6,11,0.5) 100%);
+}
+
+.mdetail-hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 6rem 2rem 2rem;
+}
+
+.mdetail-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg-glass);
+  backdrop-filter: var(--backdrop-blur);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  margin-bottom: 1.2rem;
+  transition: all var(--transition-fast);
+}
+
+.mdetail-back-btn:hover {
+  color: var(--text-bright);
+  border-color: var(--border-glow);
+}
+
+.mdetail-hero-main {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.mdetail-poster {
+  width: 220px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  flex-shrink: 0;
+}
+
+.mdetail-hero-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.mdetail-title {
+  font-size: clamp(1.4rem, 3vw, 2.2rem);
+  font-weight: 900;
+  margin-bottom: 0.2rem;
+}
+
+.mdetail-original {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-bottom: 0.3rem;
+}
+
+.mdetail-tagline {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  font-style: italic;
+  margin-bottom: 0.8rem;
+}
+
+.mdetail-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.8rem;
+}
+
+.mdetail-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+}
+
+.mdetail-badge-score {
+  background: rgba(255, 193, 7, 0.15);
+  color: #ffc107;
+}
+
+.mdetail-badge-site {
+  background: rgba(124, 58, 237, 0.15);
+  color: var(--accent-primary-light);
+}
+
+.mdetail-genres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.8rem;
+}
+
+.mdetail-genre {
+  padding: 0.25rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  background: var(--accent-gradient);
+  color: white;
+}
+
+.mdetail-crew-line {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.4rem;
+}
+
+.mdetail-crew-line strong {
+  color: var(--text-primary);
+}
+
+.mdetail-companies {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* ===== Main Content ===== */
+.mdetail-main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem 2rem 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.mdetail-section {
+  position: relative;
+}
+
+.mdetail-section h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+}
+
+.mdetail-section.glass-panel {
+  padding: 1.5rem;
+}
+
+.mdetail-synopsis {
+  font-size: 0.92rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+
+/* Trailer */
+.mdetail-trailer {
+  position: relative;
+  width: 100%;
+  padding-top: 56.25%;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--bg-elevated);
+}
+
+.mdetail-trailer iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* Cast */
+.mdetail-cast-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1rem;
+}
+
+.mdetail-cast-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+}
+
+.mdetail-cast-img {
+  width: 100%;
+  aspect-ratio: 2/3;
+  object-fit: cover;
+}
+
+.mdetail-cast-placeholder {
+  width: 100%;
+  aspect-ratio: 2/3;
+  background: var(--bg-elevated);
+}
+
+.mdetail-cast-info {
+  padding: 0.6rem 0.8rem;
+}
+
+.mdetail-cast-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mdetail-cast-role {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Seasons */
+.mdetail-seasons-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.mdetail-season-card {
+  display: flex;
+  gap: 0.8rem;
+  padding: 0.6rem;
+  align-items: center;
+}
+
+.mdetail-season-img {
+  width: 60px;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.mdetail-season-placeholder {
+  width: 60px;
+  height: 90px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.mdetail-season-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.mdetail-season-meta {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+/* Recommendations */
+.mdetail-rec-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1rem;
+}
+
+/* Empty state */
+.mdetail-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 3rem 2rem;
+  text-align: center;
+  color: var(--text-muted);
+  max-width: 500px;
+  margin: 6rem auto;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .mdetail-hero-main {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .mdetail-poster {
+    width: 160px;
+  }
+
+  .mdetail-badges,
+  .mdetail-genres {
+    justify-content: center;
+  }
+
+  .mdetail-main {
+    padding: 1rem 1rem 2rem;
+  }
+
+  .mdetail-cast-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+}

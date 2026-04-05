@@ -239,3 +239,37 @@ button, input {
   outline: 2px solid var(--accent-primary-light);
   outline-offset: 2px;
 }
+
+/* ========== Section Theme: Films (Rouge/Or) ========== */
+.section-films {
+  --accent-primary: #e63946;
+  --accent-primary-light: #f4726b;
+  --accent-secondary: #f4a261;
+  --accent-tertiary: #e76f51;
+  --accent-warm: #e9c46a;
+  --accent-gradient: linear-gradient(135deg, #e63946 0%, #f4a261 100%);
+  --accent-gradient-warm: linear-gradient(135deg, #e76f51 0%, #e9c46a 100%);
+  --accent-gradient-cool: linear-gradient(135deg, #e63946 0%, #f4a261 50%, #e9c46a 100%);
+  --border-glow: rgba(230, 57, 70, 0.4);
+  --border-focus: rgba(244, 162, 97, 0.5);
+  --shadow-glow-purple: 0 0 30px rgba(230, 57, 70, 0.3), 0 0 60px rgba(230, 57, 70, 0.1);
+  --shadow-glow-green: 0 0 20px rgba(244, 162, 97, 0.3);
+  --shadow-glow-pink: 0 0 20px rgba(231, 111, 81, 0.3);
+}
+
+/* ========== Section Theme: Séries (Bleu/Cyan) ========== */
+.section-series {
+  --accent-primary: #3a86ff;
+  --accent-primary-light: #6ba3ff;
+  --accent-secondary: #06b6d4;
+  --accent-tertiary: #8338ec;
+  --accent-warm: #06d6a0;
+  --accent-gradient: linear-gradient(135deg, #3a86ff 0%, #06b6d4 100%);
+  --accent-gradient-warm: linear-gradient(135deg, #8338ec 0%, #06d6a0 100%);
+  --accent-gradient-cool: linear-gradient(135deg, #3a86ff 0%, #8338ec 50%, #06b6d4 100%);
+  --border-glow: rgba(58, 134, 255, 0.4);
+  --border-focus: rgba(6, 182, 212, 0.5);
+  --shadow-glow-purple: 0 0 30px rgba(58, 134, 255, 0.3), 0 0 60px rgba(58, 134, 255, 0.1);
+  --shadow-glow-green: 0 0 20px rgba(6, 182, 212, 0.3);
+  --shadow-glow-pink: 0 0 20px rgba(131, 56, 236, 0.3);
+}

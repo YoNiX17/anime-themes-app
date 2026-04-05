@@ -37,6 +37,45 @@
       }
     },
 
+    "movieRatings": {
+      ".read": true,
+      "$movieId": {
+        "meta": {
+          ".write": "auth != null"
+        },
+        "users": {
+          "$userId": {
+            ".write": "auth != null && auth.uid == $userId",
+            ".validate": "newData.hasChildren(['scenario','acting','directing','music'])",
+            "scenario": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" },
+            "acting": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" },
+            "directing": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" },
+            "music": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" }
+          }
+        }
+      }
+    },
+
+    "seriesRatings": {
+      ".read": true,
+      "$seriesId": {
+        "meta": {
+          ".write": "auth != null"
+        },
+        "users": {
+          "$userId": {
+            ".write": "auth != null && auth.uid == $userId",
+            ".validate": "newData.hasChildren(['scenario','acting','directing','music','pacing'])",
+            "scenario": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" },
+            "acting": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" },
+            "directing": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" },
+            "music": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" },
+            "pacing": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" }
+          }
+        }
+      }
+    },
+
     "parties": {
       "$roomId": {
         ".read": true,
@@ -82,6 +121,25 @@
             ".validate": "newData.hasChildren(['music','animation','animeName','timestamp'])",
             "music": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" },
             "animation": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" }
+          }
+        },
+        "movieRatings": {
+          "$movieId": {
+            ".validate": "newData.hasChildren(['scenario','acting','directing','music','mediaTitle','timestamp'])",
+            "scenario": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" },
+            "acting": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" },
+            "directing": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" },
+            "music": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" }
+          }
+        },
+        "seriesRatings": {
+          "$seriesId": {
+            ".validate": "newData.hasChildren(['scenario','acting','directing','music','pacing','mediaTitle','timestamp'])",
+            "scenario": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" },
+            "acting": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" },
+            "directing": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" },
+            "music": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" },
+            "pacing": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" }
           }
         }
       }

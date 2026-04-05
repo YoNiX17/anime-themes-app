@@ -19,7 +19,6 @@ import { refreshThemeRatingMeta } from '../utils/ratingMeta';
 import type { PartyRoom as PartyRoomType, PartyUser, ChatMessage, ThemeScore } from '../services/party';
 import type { Anime, AnimeTheme } from '../services/api';
 import './PartyRoom.css';
-import { Header } from '../components/Header';
 
 const REACTIONS = ['🔥', '❤️', '🎵', '✨', '😍', '👏', '💯', '🤯'];
 
@@ -71,7 +70,7 @@ export const PartyRoom: React.FC = () => {
 
   // ──────── Firebase subscriptions ────────
   useEffect(() => {
-    if (!id) { navigate('/'); return; }
+    if (!id) { navigate('/anime'); return; }
 
     const roomRef = ref(db, `parties/${id}`);
     const unsubRoom = onValue(roomRef, (snapshot) => {
@@ -86,8 +85,7 @@ export const PartyRoom: React.FC = () => {
         }
       } else {
         showToast("Cette party n'existe pas ou a été fermée.", "error");
-        navigate('/');
-      }
+        navigate('/anime');      }
     });
 
     const usersRef = ref(db, `parties/${id}/users`);
@@ -244,7 +242,7 @@ export const PartyRoom: React.FC = () => {
     if (!id) return;
     showToast("Party fermée.", "info");
     await closePartyRoom(id);
-    navigate('/');
+    navigate('/anime');
   };
 
   // ──────── User actions ────────
@@ -317,7 +315,6 @@ export const PartyRoom: React.FC = () => {
   if (!user) {
     return (
       <div className="party-room-container">
-        <Header />
         <div className="glass-panel party-auth-msg">
           <Users size={40} style={{ color: 'var(--accent-primary-light)', marginBottom: '1rem' }} />
           <h2>Connexion requise</h2>
@@ -337,7 +334,6 @@ export const PartyRoom: React.FC = () => {
 
   return (
     <div className="party-room-container">
-      <Header />
       
       <main className="party-main-content">
         {/* ═══ Header ═══ */}

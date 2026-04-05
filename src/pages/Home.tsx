@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { TrendingUp, Crown, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Header } from '../components/Header';
 import { AnimeCard } from '../components/AnimeCard';
 import { Loader } from '../components/Loader';
 import { useToast } from '../components/Toast';
@@ -50,7 +49,7 @@ export const Home: React.FC = () => {
     try {
       const roomId = await createPartyRoom(user.uid);
       showToast("Party créée ! Redirection...", "success");
-      navigate(`/party/${roomId}`);
+      navigate(`/anime/party/${roomId}`);
     } catch (e) {
       console.error("Failed to create room", e);
       showToast("Impossible de créer la party room.", "error");
@@ -61,7 +60,6 @@ export const Home: React.FC = () => {
 
   return (
     <>
-      <Header />
       
       {!isLoading && !error && (
         <section className="hero-section">

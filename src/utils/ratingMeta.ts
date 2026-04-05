@@ -3,6 +3,8 @@ import { db } from '../services/firebase';
 
 const ANIME_KEYS = ['plot', 'characters', 'animation', 'ost', 'pacing'];
 const THEME_KEYS = ['music', 'animation'];
+const MOVIE_KEYS = ['scenario', 'acting', 'directing', 'music'];
+const SERIES_KEYS = ['scenario', 'acting', 'directing', 'music', 'pacing'];
 
 function computeAverages(entries: Record<string, number>[], keys: string[]) {
   const cnt = entries.length;
@@ -44,4 +46,32 @@ export async function refreshThemeRatingMeta(
     : [];
   const agg = computeAverages(entries, THEME_KEYS);
   await set(ref(db, `themeRatings/${themeId}/meta`), { ...existing, ...extraMeta, ...agg });
+}
+
+export async function refreshMovieRatingMeta(
+  movieId: string | number,
+  extraMeta?: Record<string, unknown>,
+): Promise<void> {
+  const metaSnap = await get(ref(db, `movieRatings/${movieId}/meta`));
+  const existing = metaSnap.exists() ? metaSnap.val() : {};
+  const usersSnap = await get(ref(db, `movieRatings/${movieId}/users`));
+  const entries = usersSnap.exists()
+    ? (Object.values(usersSnap.val()) as Record<string, number>[])
+    : [];
+  const agg = computeAverages(entries, MOVIE_KEYS);
+  await set(ref(db, `movieRatings/${movieId}/meta`), { ...existing, ...extraMeta, ...agg });
+}
+
+export async function refreshSeriesRatingMeta(
+  seriesId: string | number,
+  extraMeta?: Record<string, unknown>,
+): Promise<void> {
+  const metaSnap = await get(ref(db, `seriesRatings/${seriesId}/meta`));
+  const existing = metaSnap.exists() ? metaSnap.val() : {};
+  const usersSnap = await get(ref(db, `seriesRatings/${seriesId}/users`));
+  const entries = usersSnap.exists()
+    ? (Object.values(usersSnap.val()) as Record<string, number>[])
+    : [];
+  const agg = computeAverages(entries, SERIES_KEYS);
+  await set(ref(db, `seriesRatings/${seriesId}/meta`), { ...existing, ...extraMeta, ...agg });
 }

@@ -3,7 +3,6 @@ import { ref, onValue } from 'firebase/database';
 import { Trophy, BookOpen, Palette, Music, Timer, BarChart3, Loader2, ArrowLeft, Users as UsersIcon, Play, Layers } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../services/firebase';
-import { Header } from '../components/Header';
 import { getAnimeName } from '../utils/animeGrouping';
 import './Leaderboard.css';
 
@@ -292,11 +291,10 @@ export const Leaderboard: React.FC = () => {
 
   return (
     <div className="leaderboard-container">
-      <Header />
 
       <main className="leaderboard-main">
         <div className="leaderboard-hero">
-          <button className="lb-back-btn" onClick={() => navigate('/')}>
+          <button className="lb-back-btn" onClick={() => navigate('/anime')}>
             <ArrowLeft size={18} />
             Accueil
           </button>

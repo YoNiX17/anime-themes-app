@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Sparkles, Search, ArrowLeft } from 'lucide-react';
-import { Header } from '../components/Header';
 import { AnimeCard } from '../components/AnimeCard';
 import { Loader } from '../components/Loader';
 import { searchAnime } from '../services/api';
@@ -41,14 +40,12 @@ export const SearchResults: React.FC = () => {
 
   return (
     <>
-      <Header initialQuery={query} />
-
       <main className="search-results-main">
         {!query.trim() ? (
           <div className="search-empty glass-panel">
             <Search size={32} />
             <p>Tape un nom d'anime, une abréviation (SNK, JJK, SAO...) ou un titre en anglais/japonais.</p>
-            <button className="search-back-btn" onClick={() => navigate('/')}>
+            <button className="search-back-btn" onClick={() => navigate('/anime')}>
               <ArrowLeft size={16} /> Retour à l'accueil
             </button>
           </div>
@@ -59,7 +56,7 @@ export const SearchResults: React.FC = () => {
             <Sparkles size={32} />
             <p>Aucun anime trouvé pour « <strong>{query}</strong> ».</p>
             <p className="search-hint">Essaie un autre terme, une abréviation (ex: SNK, JJK) ou le titre japonais.</p>
-            <button className="search-back-btn" onClick={() => navigate('/')}>
+            <button className="search-back-btn" onClick={() => navigate('/anime')}>
               <ArrowLeft size={16} /> Retour à l'accueil
             </button>
           </div>

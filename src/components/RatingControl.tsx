@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { BookOpen, Users as UsersIcon, Palette, Music, Timer, Save, Check } from 'lucide-react';
+import { BookOpen, Users as UsersIcon, Palette, Music, Timer, Save, Check, Clapperboard, UserCheck, Film } from 'lucide-react';
 import { ref, set, onValue, get } from 'firebase/database';
 import { db } from '../services/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from './Toast';
-import { refreshAnimeRatingMeta, refreshThemeRatingMeta } from '../utils/ratingMeta';
+import { refreshAnimeRatingMeta, refreshThemeRatingMeta, refreshMovieRatingMeta, refreshSeriesRatingMeta } from '../utils/ratingMeta';
 import './RatingControl.css';
 
 interface AnimeRatingProps {
@@ -26,7 +26,21 @@ interface ThemeRatingProps {
   themeSlug?: string;
 }
 
-type RatingControlProps = AnimeRatingProps | ThemeRatingProps;
+interface MovieRatingProps {
+  mode: 'movie';
+  mediaId: string | number;
+  mediaTitle?: string;
+  posterPath?: string;
+}
+
+interface SeriesRatingProps {
+  mode: 'series';
+  mediaId: string | number;
+  mediaTitle?: string;
+  posterPath?: string;
+}
+
+type RatingControlProps = AnimeRatingProps | ThemeRatingProps | MovieRatingProps | SeriesRatingProps;
 
 const ANIME_CATEGORIES = [
   { key: 'plot', label: 'Scénario', icon: BookOpen, color: '#8b5cf6' },
@@ -41,16 +55,57 @@ const THEME_CATEGORIES = [
   { key: 'animation', label: 'Animation', icon: Palette, color: '#06b6d4' },
 ];
 
+const MOVIE_CATEGORIES = [
+  { key: 'scenario', label: 'Scénario', icon: BookOpen, color: '#e63946' },
+  { key: 'acting', label: 'Acteurs', icon: UserCheck, color: '#f4a261' },
+  { key: 'directing', label: 'Réalisation', icon: Clapperboard, color: '#e76f51' },
+  { key: 'music', label: 'Musique', icon: Music, color: '#2a9d8f' },
+];
+
+const SERIES_CATEGORIES = [
+  { key: 'scenario', label: 'Scénario', icon: BookOpen, color: '#3a86ff' },
+  { key: 'acting', label: 'Acteurs', icon: UserCheck, color: '#06b6d4' },
+  { key: 'directing', label: 'Réalisation', icon: Clapperboard, color: '#8338ec' },
+  { key: 'music', label: 'Musique', icon: Music, color: '#ff006e' },
+  { key: 'pacing', label: 'Rythme', icon: Timer, color: '#06d6a0' },
+];
+
+function getModeConfig(mode: string) {
+  switch (mode) {
+    case 'anime': return { categories: ANIME_CATEGORIES, dbRootKey: 'ratings', userDbKey: 'ratings' };
+    case 'theme': return { categories: THEME_CATEGORIES, dbRootKey: 'themeRatings', userDbKey: 'themeRatings' };
+    case 'movie': return { categories: MOVIE_CATEGORIES, dbRootKey: 'movieRatings', userDbKey: 'movieRatings' };
+    case 'series': return { categories: SERIES_CATEGORIES, dbRootKey: 'seriesRatings', userDbKey: 'seriesRatings' };
+    default: return { categories: ANIME_CATEGORIES, dbRootKey: 'ratings', userDbKey: 'ratings' };
+  }
+}
+
+const MODE_TITLES: Record<string, string> = {
+  anime: 'Noter cet anime',
+  theme: 'Noter cet OP/ED',
+  movie: 'Noter ce film',
+  series: 'Noter cette série',
+};
+
 export const RatingControl: React.FC<RatingControlProps> = (props) => {
-  const { mode, animeId, animeName, coverImage, franchise } = props;
+  const { mode } = props;
+  const { categories, dbRootKey, userDbKey } = getModeConfig(mode);
+
+  // Anime/theme fields
+  const animeId = 'animeId' in props ? props.animeId : undefined;
+  const animeName = 'animeName' in props ? props.animeName : undefined;
+  const coverImage = 'coverImage' in props ? props.coverImage : undefined;
+  const franchise = 'franchise' in props ? props.franchise : undefined;
   const themeId = mode === 'theme' ? (props as ThemeRatingProps).themeId : null;
   const themeType = mode === 'theme' ? (props as ThemeRatingProps).themeType || '' : '';
   const themeSlug = mode === 'theme' ? (props as ThemeRatingProps).themeSlug || '' : '';
 
-  const categories = mode === 'anime' ? ANIME_CATEGORIES : THEME_CATEGORIES;
-  const dbRootKey = mode === 'anime' ? 'ratings' : 'themeRatings';
-  const itemId = mode === 'anime' ? animeId : themeId!;
-  const userDbKey = mode === 'anime' ? 'ratings' : 'themeRatings';
+  // Movie/series fields
+  const mediaId = 'mediaId' in props ? props.mediaId : undefined;
+  const mediaTitle = 'mediaTitle' in props ? props.mediaTitle : undefined;
+  const posterPath = 'posterPath' in props ? props.posterPath : undefined;
+
+  const itemId = mode === 'theme' ? themeId! : (mode === 'movie' || mode === 'series') ? mediaId! : animeId!;
   const getDefaults = () => Object.fromEntries(categories.map(c => [c.key, 50]));
 
   const { user } = useAuth();
@@ -121,27 +176,40 @@ export const RatingControl: React.FC<RatingControlProps> = (props) => {
         saveData.animeName = animeName || '';
         if (coverImage) saveData.coverImage = coverImage;
         if (franchise) saveData.franchise = franchise;
-      } else {
+      } else if (mode === 'theme') {
         saveData.animeName = animeName || '';
         saveData.animeId = animeId;
         saveData.themeType = themeType;
         saveData.themeSlug = themeSlug;
         if (franchise) saveData.franchise = franchise;
+      } else {
+        // movie or series
+        saveData.mediaTitle = mediaTitle || '';
+        if (posterPath) saveData.posterPath = posterPath;
       }
       await set(ref(db, `users/${user.uid}/${userDbKey}/${itemId}`), saveData);
       await set(ref(db, `${dbRootKey}/${itemId}/users/${user.uid}`), { ...scores });
 
       // Update meta with basic info + computed averages
-      const metaFields: Record<string, unknown> = { animeName: animeName || '', animeId };
       if (mode === 'anime') {
+        const metaFields: Record<string, unknown> = { animeName: animeName || '', animeId };
         if (coverImage) metaFields.coverImage = coverImage;
         if (franchise) metaFields.franchise = franchise;
         await refreshAnimeRatingMeta(itemId, metaFields);
-      } else {
+      } else if (mode === 'theme') {
+        const metaFields: Record<string, unknown> = { animeName: animeName || '', animeId };
         metaFields.themeType = themeType;
         metaFields.themeSlug = themeSlug;
         if (franchise) metaFields.franchise = franchise;
         await refreshThemeRatingMeta(itemId, metaFields);
+      } else if (mode === 'movie') {
+        const metaFields: Record<string, unknown> = { mediaTitle: mediaTitle || '' };
+        if (posterPath) metaFields.posterPath = posterPath;
+        await refreshMovieRatingMeta(itemId, metaFields);
+      } else if (mode === 'series') {
+        const metaFields: Record<string, unknown> = { mediaTitle: mediaTitle || '' };
+        if (posterPath) metaFields.posterPath = posterPath;
+        await refreshSeriesRatingMeta(itemId, metaFields);
       }
       setHasExisting(true);
       setJustSaved(true);
@@ -164,7 +232,7 @@ export const RatingControl: React.FC<RatingControlProps> = (props) => {
   return (
     <div className="rating-control">
       <div className="rating-header">
-        <h4>{mode === 'anime' ? 'Noter cet anime' : 'Noter cet OP/ED'}</h4>
+        <h4>{MODE_TITLES[mode] || 'Noter'}</h4>
         <div className="rating-header-right">
           {voteCount > 0 && (
             <span className="vote-count-badge">{voteCount} vote{voteCount > 1 ? 's' : ''}</span>

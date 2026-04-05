@@ -7,7 +7,6 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { db } from '../services/firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { Header } from '../components/Header';
 import { useToast } from '../components/Toast';
 import { getAnimeName } from '../utils/animeGrouping';
 import { refreshAnimeRatingMeta, refreshThemeRatingMeta } from '../utils/ratingMeta';
@@ -131,7 +130,7 @@ export const Profile: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!user) { navigate('/'); return; }
+    if (!user) { navigate('/anime'); return; }
 
     // Fetch avatar
     const avatarRef = ref(db, `users/${user.uid}/profile/avatarUrl`);
@@ -312,12 +311,11 @@ export const Profile: React.FC = () => {
 
   return (
     <div className="profile-container">
-      <Header />
 
       <main className="profile-main">
         {/* Hero / User info */}
         <div className="profile-hero glass-panel">
-          <button className="profile-back-btn" onClick={() => navigate('/')}>
+          <button className="profile-back-btn" onClick={() => navigate('/anime')}>
             <ArrowLeft size={18} /> Accueil
           </button>
 
