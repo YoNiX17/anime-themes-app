@@ -1,8 +1,8 @@
 {
   "rules": {
     "ratings": {
+      ".read": true,
       "$animeId": {
-        ".read": true,
         "meta": {
           ".write": "auth != null"
         },
@@ -21,8 +21,8 @@
     },
 
     "themeRatings": {
+      ".read": true,
       "$themeId": {
-        ".read": true,
         "meta": {
           ".write": "auth != null"
         },
