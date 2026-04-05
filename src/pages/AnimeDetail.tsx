@@ -14,9 +14,10 @@ import { Loader } from '../components/Loader';
 import {
   searchAnime, findMalId,
   fetchJikanAnimeDetail, fetchJikanStaff, fetchJikanCharacters, fetchJikanRecommendations,
+  fetchJikanEpisodes, translateToFrench,
 } from '../services/api';
 import type {
-  Anime, JikanAnimeDetail, JikanStaffEntry, JikanCharacterEntry, JikanRecommendation
+  Anime, JikanAnimeDetail, JikanStaffEntry, JikanCharacterEntry, JikanRecommendation, JikanEpisode
 } from '../services/api';
 import { getAnimeName } from '../utils/animeGrouping';
 import './AnimeDetail.css';
@@ -42,9 +43,12 @@ export const AnimeDetail: React.FC = () => {
   const [staff, setStaff] = useState<JikanStaffEntry[]>([]);
   const [characters, setCharacters] = useState<JikanCharacterEntry[]>([]);
   const [recommendations, setRecommendations] = useState<JikanRecommendation[]>([]);
+  const [episodes, setEpisodes] = useState<JikanEpisode[]>([]);
   const [loading, setLoading] = useState(true);
   const [showPlayer, setShowPlayer] = useState(false);
   const [hasUserRating, setHasUserRating] = useState(false);
+  const [siteScore, setSiteScore] = useState<{ avg: number; count: number; rank: number } | null>(null);
+  const [frenchSynopsis, setFrenchSynopsis] = useState<string | null>(null);
 
   useEffect(() => {
     if (!name) return;
@@ -62,6 +66,41 @@ export const AnimeDetail: React.FC = () => {
       setHasUserRating(snapshot.exists());
     });
   }, [user, anime]);
+
+  // Fetch site ratings to compute average + rank
+  useEffect(() => {
+    if (!anime) { setSiteScore(null); return; }
+    get(ref(db, 'ratings')).then((snapshot) => {
+      if (!snapshot.exists()) return;
+      const data = snapshot.val();
+      const allAverages: { id: string; avg: number }[] = [];
+      Object.entries(data).forEach(([animeId, animeData]: [string, any]) => {
+        const users = animeData?.users;
+        if (!users) return;
+        const entries = Object.values(users) as Record<string, number>[];
+        let total = 0, count = 0;
+        entries.forEach((e: any) => {
+          const sum = (e.plot || 0) + (e.characters || 0) + (e.animation || 0) + (e.ost || 0) + (e.pacing || 0);
+          if (sum > 0) { total += sum; count++; }
+        });
+        if (count > 0) allAverages.push({ id: animeId, avg: total / (5 * count) });
+      });
+      allAverages.sort((a, b) => b.avg - a.avg);
+      const currentId = String(anime.id);
+      const idx = allAverages.findIndex(a => a.id === currentId);
+      if (idx >= 0) {
+        const animeUsers = data[currentId]?.users;
+        const count = animeUsers
+          ? Object.values(animeUsers).filter((e: any) =>
+              (e.plot || 0) + (e.characters || 0) + (e.animation || 0) + (e.ost || 0) + (e.pacing || 0) > 0
+            ).length
+          : 0;
+        setSiteScore({ avg: allAverages[idx].avg, count, rank: idx + 1 });
+      } else {
+        setSiteScore(null);
+      }
+    });
+  }, [anime]);
 
   const loadAnimeData = async (animeName: string) => {
     setLoading(true);
@@ -85,14 +124,25 @@ export const AnimeDetail: React.FC = () => {
       setDetail(detailData);
 
       // Stagger subsequent requests by ~400ms to avoid rate limiting
-      const [staffData, charsData, recsData] = await Promise.all([
+      const [staffData, charsData, recsData, episodesData] = await Promise.all([
         new Promise<JikanStaffEntry[]>(r => setTimeout(async () => r(await fetchJikanStaff(malId!)), 400)),
         new Promise<JikanCharacterEntry[]>(r => setTimeout(async () => r(await fetchJikanCharacters(malId!)), 800)),
         new Promise<JikanRecommendation[]>(r => setTimeout(async () => r(await fetchJikanRecommendations(malId!)), 1200)),
+        new Promise<{ episodes: JikanEpisode[]; hasMore: boolean }>(r => setTimeout(async () => r(await fetchJikanEpisodes(malId!)), 1600)),
       ]);
       setStaff(staffData);
       setCharacters(charsData);
       setRecommendations(recsData);
+      setEpisodes(episodesData.episodes);
+
+      // Translate synopsis to French
+      if (detailData?.synopsis) {
+        const cleaned = detailData.synopsis
+          .replace(/\s*\[Written by MAL Rewrite\]\s*/gi, '')
+          .replace(/\s*\(Source:.*?\)\s*/gi, '')
+          .trim();
+        translateToFrench(cleaned).then(setFrenchSynopsis);
+      }
     }
 
     setLoading(false);
@@ -207,20 +257,18 @@ export const AnimeDetail: React.FC = () => {
                 <p className="detail-title-en">{titleEn}</p>
               )}
 
-              {/* MAL Score */}
-              {detail && detail.score > 0 && (
+              {/* Site Score */}
+              {siteScore && (
                 <div className="detail-score-row">
                   <div className="detail-mal-score">
                     <Star size={18} fill="currentColor" />
-                    <span className="score-value">{detail.score.toFixed(1)}</span>
-                    <span className="score-max">/ 10</span>
+                    <span className="score-value">{siteScore.avg.toFixed(1)}</span>
+                    <span className="score-max">/ 100</span>
                   </div>
-                  <span className="score-users">{detail.scored_by?.toLocaleString('fr-FR')} votes</span>
-                  {detail.rank && (
-                    <span className="detail-rank">
-                      <Trophy size={14} /> #{detail.rank}
-                    </span>
-                  )}
+                  <span className="score-users">{siteScore.count} vote{siteScore.count > 1 ? 's' : ''} sur le site</span>
+                  <span className="detail-rank">
+                    <Trophy size={14} /> #{siteScore.rank}
+                  </span>
                 </div>
               )}
 
@@ -296,10 +344,10 @@ export const AnimeDetail: React.FC = () => {
 
       <main className="detail-main">
         {/* ===== SYNOPSIS ===== */}
-        {synopsis && (
+        {(frenchSynopsis || synopsis) && (
           <section className="detail-section">
             <h2 className="detail-section-title"><BookOpen size={18} /> Synopsis</h2>
-            <p className="detail-synopsis">{synopsis}</p>
+            <p className="detail-synopsis">{frenchSynopsis || synopsis}</p>
           </section>
         )}
 
@@ -329,6 +377,28 @@ export const AnimeDetail: React.FC = () => {
                 allow="encrypted-media"
                 className="detail-trailer-iframe"
               />
+            </div>
+          </section>
+        )}
+
+        {/* ===== EPISODES ===== */}
+        {episodes.length > 0 && (
+          <section className="detail-section">
+            <h2 className="detail-section-title">
+              <Tv size={18} /> Épisodes {detail?.episodes ? `(${detail.episodes})` : `(${episodes.length})`}
+            </h2>
+            <div className="detail-episodes-list">
+              {episodes.map((ep) => (
+                <div key={ep.mal_id} className={`episode-row${ep.filler ? ' filler' : ''}${ep.recap ? ' recap' : ''}`}>
+                  <span className="ep-number">{ep.mal_id}</span>
+                  <span className="ep-title">{ep.title}</span>
+                  {ep.aired && (
+                    <span className="ep-date">{new Date(ep.aired).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                  )}
+                  {ep.filler && <span className="ep-badge filler-badge">Filler</span>}
+                  {ep.recap && <span className="ep-badge recap-badge">Récap</span>}
+                </div>
+              ))}
             </div>
           </section>
         )}

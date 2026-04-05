@@ -136,6 +136,16 @@ export interface JikanRecommendation {
   entry: JikanRecommendationEntry;
 }
 
+export interface JikanEpisode {
+  mal_id: number;
+  title: string;
+  title_japanese: string | null;
+  title_romanji: string | null;
+  aired: string | null;
+  filler: boolean;
+  recap: boolean;
+}
+
 const JIKAN_BASE = 'https://api.jikan.moe/v4';
 
 /**
@@ -191,6 +201,58 @@ export const fetchJikanRecommendations = async (malId: number): Promise<JikanRec
     return data.data || [];
   } catch {
     return [];
+  }
+};
+
+/**
+ * Fetch anime episodes from Jikan
+ */
+export const fetchJikanEpisodes = async (malId: number, page = 1): Promise<{ episodes: JikanEpisode[]; hasMore: boolean }> => {
+  try {
+    const res = await fetch(`${JIKAN_BASE}/anime/${malId}/episodes?page=${page}`);
+    if (!res.ok) return { episodes: [], hasMore: false };
+    const data = await res.json();
+    return {
+      episodes: data.data || [],
+      hasMore: data.pagination?.has_next_page || false,
+    };
+  } catch {
+    return { episodes: [], hasMore: false };
+  }
+};
+
+/**
+ * Translate text to French using MyMemory API (free tier, ~500 chars/request)
+ */
+export const translateToFrench = async (text: string): Promise<string> => {
+  if (!text) return '';
+  try {
+    const MAX_CHUNK = 450;
+    const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+    const chunks: string[] = [];
+    let current = '';
+    for (const s of sentences) {
+      if ((current + s).length > MAX_CHUNK && current) {
+        chunks.push(current.trim());
+        current = s;
+      } else {
+        current += s;
+      }
+    }
+    if (current.trim()) chunks.push(current.trim());
+
+    const translated: string[] = [];
+    for (const chunk of chunks) {
+      const res = await fetch(
+        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(chunk)}&langpair=en|fr`
+      );
+      if (!res.ok) { translated.push(chunk); continue; }
+      const data = await res.json();
+      translated.push(data.responseData?.translatedText || chunk);
+    }
+    return translated.join(' ');
+  } catch {
+    return text;
   }
 };
 
