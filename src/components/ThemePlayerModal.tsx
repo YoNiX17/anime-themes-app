@@ -95,13 +95,6 @@ export const ThemePlayerModal: React.FC<ThemePlayerModalProps> = ({ anime, onClo
               </div>
             )}
 
-            <RatingControl 
-              mode="anime"
-              animeId={anime.id}
-              animeName={anime.name}
-              coverImage={anime.images?.find(img => img.facet === 'Large Cover')?.link || anime.images?.find(img => img.facet === 'Small Cover')?.link}
-            />
-
             {selectedTheme && (
               <RatingControl 
                 mode="theme"

@@ -26,6 +26,7 @@ interface UserAnimeRating {
   pacing: number;
   timestamp: number;
   coverImage?: string;
+  franchise?: string;
 }
 
 interface UserThemeRating {
@@ -152,6 +153,7 @@ export const Profile: React.FC = () => {
           pacing: d.pacing || 0,
           timestamp: d.timestamp || 0,
           coverImage: d.coverImage || undefined,
+          franchise: d.franchise || undefined,
         }));
         arr.sort((a, b) => b.timestamp - a.timestamp);
         setAnimeRatings(arr);
@@ -261,7 +263,7 @@ export const Profile: React.FC = () => {
   const getAnimeGroups = (): AnimeGroup[] => {
     const map = new Map<string, UserAnimeRating[]>();
     animeRatings.forEach(r => {
-      const anime = getAnimeName(r.animeName);
+      const anime = getAnimeName(r.animeName, r.franchise);
       const existing = map.get(anime) || [];
       existing.push(r);
       map.set(anime, existing);

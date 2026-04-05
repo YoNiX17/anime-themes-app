@@ -2,10 +2,14 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, Star, Users, Tv, Clock, BookOpen, Film,
-  Play, ExternalLink, Music, Palette, Clapperboard, Sparkles, ChevronRight, Trophy
+  Play, ExternalLink, Music, Palette, Clapperboard, Sparkles, ChevronRight, Trophy, CheckCircle
 } from 'lucide-react';
+import { ref, get } from 'firebase/database';
+import { db } from '../services/firebase';
+import { useAuth } from '../contexts/AuthContext';
 import { Header } from '../components/Header';
 import { ThemePlayerModal } from '../components/ThemePlayerModal';
+import { RatingControl } from '../components/RatingControl';
 import { Loader } from '../components/Loader';
 import {
   searchAnime, findMalId,
@@ -14,6 +18,7 @@ import {
 import type {
   Anime, JikanAnimeDetail, JikanStaffEntry, JikanCharacterEntry, JikanRecommendation
 } from '../services/api';
+import { getAnimeName } from '../utils/animeGrouping';
 import './AnimeDetail.css';
 
 const STATUS_FR: Record<string, string> = {
@@ -30,6 +35,7 @@ export const AnimeDetail: React.FC = () => {
   const { name } = useParams<{ name: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [anime, setAnime] = useState<Anime | null>(null);
   const [detail, setDetail] = useState<JikanAnimeDetail | null>(null);
@@ -38,12 +44,24 @@ export const AnimeDetail: React.FC = () => {
   const [recommendations, setRecommendations] = useState<JikanRecommendation[]>([]);
   const [loading, setLoading] = useState(true);
   const [showPlayer, setShowPlayer] = useState(false);
+  const [hasUserRating, setHasUserRating] = useState(false);
 
   useEffect(() => {
     if (!name) return;
     const decodedName = decodeURIComponent(name);
     loadAnimeData(decodedName);
   }, [name]);
+
+  // Check if user has already rated this anime
+  useEffect(() => {
+    if (!user || !anime) {
+      setHasUserRating(false);
+      return;
+    }
+    get(ref(db, `users/${user.uid}/ratings/${anime.id}`)).then((snapshot) => {
+      setHasUserRating(snapshot.exists());
+    });
+  }, [user, anime]);
 
   const loadAnimeData = async (animeName: string) => {
     setLoading(true);
@@ -99,6 +117,27 @@ export const AnimeDetail: React.FC = () => {
   const supportCharacters = characters.filter(c => c.role === 'Supporting').slice(0, 4);
   const displayChars = [...mainCharacters, ...supportCharacters].slice(0, 8);
 
+  // Compute franchise name from Jikan relations (look for Prequel/Parent/Adaptation chain root)
+  const computeFranchise = (): string | undefined => {
+    if (!detail) return undefined;
+    // If it has a prequel or parent story, it's part of a franchise
+    const parentRel = detail.relations.find(r =>
+      r.relation === 'Prequel' || r.relation === 'Parent story'
+    );
+    if (parentRel) {
+      // The parent's name is a better franchise root
+      const parent = parentRel.entry.find(e => e.type === 'anime');
+      if (parent) return getAnimeName(parent.name);
+    }
+    // If it has sequels, use own name as franchise root
+    const hasSequel = detail.relations.some(r =>
+      r.relation === 'Sequel' || r.relation === 'Side story' || r.relation === 'Spin-off'
+    );
+    if (hasSequel) return getAnimeName(detail.title);
+    return undefined;
+  };
+  const franchise = computeFranchise();
+
   const coverImage = anime?.images?.find(i => i.facet === 'Large Cover')?.link
     || anime?.images?.find(i => i.facet === 'Small Cover')?.link
     || detail?.images?.webp?.large_image_url
@@ -139,7 +178,12 @@ export const AnimeDetail: React.FC = () => {
 
   const title = detail?.title || anime?.name || '';
   const titleEn = detail?.title_english;
-  const synopsis = detail?.synopsis || anime?.synopsis || '';
+  const rawSynopsis = detail?.synopsis || anime?.synopsis || '';
+  // Clean MAL rewrite tags
+  const synopsis = rawSynopsis
+    .replace(/\s*\[Written by MAL Rewrite\]\s*/gi, '')
+    .replace(/\s*\(Source:.*?\)\s*/gi, '')
+    .trim();
 
   return (
     <div className="detail-container">
@@ -239,6 +283,11 @@ export const AnimeDetail: React.FC = () => {
                     <Play size={16} /> Trailer
                   </a>
                 )}
+                {hasUserRating && (
+                  <span className="detail-rated-badge">
+                    <CheckCircle size={16} /> Déjà noté
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -251,6 +300,20 @@ export const AnimeDetail: React.FC = () => {
           <section className="detail-section">
             <h2 className="detail-section-title"><BookOpen size={18} /> Synopsis</h2>
             <p className="detail-synopsis">{synopsis}</p>
+          </section>
+        )}
+
+        {/* ===== ANIME RATING ===== */}
+        {anime && (
+          <section className="detail-section">
+            <h2 className="detail-section-title"><Star size={18} /> Noter cet anime</h2>
+            <RatingControl
+              mode="anime"
+              animeId={anime.id}
+              animeName={anime.name}
+              coverImage={coverImage}
+              franchise={franchise}
+            />
           </section>
         )}
 

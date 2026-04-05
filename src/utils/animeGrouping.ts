@@ -44,7 +44,14 @@ const ANIME_PATTERNS: [RegExp, string][] = [
   [/^Attack on Titan/i, 'Shingeki no Kyojin'],
 ];
 
-export function getAnimeName(seasonName: string): string {
+/**
+ * Get the franchise/anime name from a season title.
+ * If a `franchise` field was stored (from Jikan relations), prefer that.
+ * Otherwise fall back to pattern matching + regex cleanup.
+ */
+export function getAnimeName(seasonName: string, franchise?: string): string {
+  if (franchise) return franchise;
+
   for (const [pattern, anime] of ANIME_PATTERNS) {
     if (pattern.test(seasonName)) return anime;
   }

@@ -66,7 +66,7 @@ export const Header: React.FC<HeaderProps> = ({ onSearch }) => {
         <div className="header-content">
           <div className="logo" onClick={() => {
             setQuery('');
-            onSearch('');
+            navigate('/');
           }}>
             <div className="logo-icon-wrapper">
               <Play className="logo-icon" size={18} fill="white" />

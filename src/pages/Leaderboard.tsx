@@ -31,6 +31,7 @@ interface AnimeRating {
   animeId: string;
   animeName: string;
   coverImage?: string;
+  franchise?: string;
   avgPlot: number;
   avgCharacters: number;
   avgAnimation: number;
@@ -108,6 +109,7 @@ export const Leaderboard: React.FC = () => {
           animeId,
           animeName: meta?.animeName || `Anime #${animeId}`,
           coverImage: meta?.coverImage || undefined,
+          franchise: meta?.franchise || undefined,
           avgPlot: totals.plot / count,
           avgCharacters: totals.characters / count,
           avgAnimation: totals.animation / count,
@@ -228,7 +230,7 @@ export const Leaderboard: React.FC = () => {
   const getGroupedAnime = (): AnimeGroupRating[] => {
     const map = new Map<string, AnimeRating[]>();
     animeRatings.forEach(r => {
-      const anime = getAnimeName(r.animeName);
+      const anime = getAnimeName(r.animeName, r.franchise);
       const existing = map.get(anime) || [];
       existing.push(r);
       map.set(anime, existing);

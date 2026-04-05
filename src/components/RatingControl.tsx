@@ -11,6 +11,7 @@ interface AnimeRatingProps {
   animeId: string | number;
   animeName?: string;
   coverImage?: string;
+  franchise?: string;
 }
 
 interface ThemeRatingProps {
@@ -18,6 +19,7 @@ interface ThemeRatingProps {
   animeId: string | number;
   animeName?: string;
   coverImage?: string;
+  franchise?: string;
   themeId: string | number;
   themeType?: string;
   themeSlug?: string;
@@ -39,7 +41,7 @@ const THEME_CATEGORIES = [
 ];
 
 export const RatingControl: React.FC<RatingControlProps> = (props) => {
-  const { mode, animeId, animeName, coverImage } = props;
+  const { mode, animeId, animeName, coverImage, franchise } = props;
   const themeId = mode === 'theme' ? (props as ThemeRatingProps).themeId : null;
   const themeType = mode === 'theme' ? (props as ThemeRatingProps).themeType || '' : '';
   const themeSlug = mode === 'theme' ? (props as ThemeRatingProps).themeSlug || '' : '';
@@ -117,17 +119,20 @@ export const RatingControl: React.FC<RatingControlProps> = (props) => {
       if (mode === 'anime') {
         saveData.animeName = animeName || '';
         if (coverImage) saveData.coverImage = coverImage;
+        if (franchise) saveData.franchise = franchise;
       } else {
         saveData.animeName = animeName || '';
         saveData.animeId = animeId;
         saveData.themeType = themeType;
         saveData.themeSlug = themeSlug;
+        if (franchise) saveData.franchise = franchise;
       }
       await set(ref(db, `users/${user.uid}/${userDbKey}/${itemId}`), saveData);
       await set(ref(db, `${dbRootKey}/${itemId}/users/${user.uid}`), { ...scores });
       if (mode === 'anime' && animeName) {
         const meta: Record<string, any> = { animeName, animeId };
         if (coverImage) meta.coverImage = coverImage;
+        if (franchise) meta.franchise = franchise;
         await set(ref(db, `${dbRootKey}/${itemId}/meta`), meta);
       } else if (mode === 'theme') {
         await set(ref(db, `${dbRootKey}/${itemId}/meta`), {
