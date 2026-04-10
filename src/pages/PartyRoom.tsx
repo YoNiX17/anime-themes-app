@@ -56,7 +56,7 @@ export const PartyRoom: React.FC = () => {
   const [revealVisible, setRevealVisible] = useState(false);
   const [clockOffset, setClockOffset] = useState(0);
   const reactionIdRef = useRef(0);
-  const chatEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const syncIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -125,9 +125,11 @@ export const PartyRoom: React.FC = () => {
     }
   }, [room?.phase]);
 
-  // Auto-scroll chat
+  // Auto-scroll chat (only within the chat container, not the whole page)
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
   }, [chatMessages]);
 
   // Video sync — when playing phase starts, sync to server timestamp using clock offset
@@ -695,7 +697,7 @@ export const PartyRoom: React.FC = () => {
             {/* Chat */}
             <div className="sidebar-section chat-section glass-panel">
               <h4 className="sidebar-title"><MessageCircle size={16} /> Chat</h4>
-              <div className="chat-messages">
+              <div className="chat-messages" ref={chatContainerRef}>
                 {chatMessages.length === 0 ? (
                   <p className="chat-empty">Pas encore de messages...</p>
                 ) : (
@@ -712,7 +714,6 @@ export const PartyRoom: React.FC = () => {
                     </div>
                   ))
                 )}
-                <div ref={chatEndRef} />
               </div>
               <div className="chat-input-area">
                 <div className="reaction-bar-wrapper">

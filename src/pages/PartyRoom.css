@@ -58,6 +58,8 @@
   gap: 0.35rem;
   margin-bottom: 1.5rem;
   z-index: 1;
+  max-height: 240px;
+  overflow-y: auto;
 }
 
 .queue-item {
