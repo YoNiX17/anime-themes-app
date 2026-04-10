@@ -15,6 +15,7 @@ const AnimeDetail = lazy(() => import('./pages/AnimeDetail').then(m => ({ defaul
 const MediaHome = lazy(() => import('./pages/MediaHome').then(m => ({ default: m.MediaHome })));
 const MediaSearch = lazy(() => import('./pages/MediaSearch').then(m => ({ default: m.MediaSearch })));
 const MediaDetail = lazy(() => import('./pages/MediaDetail').then(m => ({ default: m.MediaDetail })));
+const Playlist = lazy(() => import('./pages/Playlist').then(m => ({ default: m.Playlist })));
 const MediaLeaderboard = lazy(() => import('./pages/MediaLeaderboard').then(m => ({ default: m.MediaLeaderboard })));
 const MediaProfile = lazy(() => import('./pages/MediaProfile').then(m => ({ default: m.MediaProfile })));
 
@@ -31,6 +32,7 @@ function App() {
             <Route path="/anime/search" element={<SearchResults />} />
             <Route path="/anime/:name" element={<AnimeDetail />} />
             <Route path="/anime/party/:id" element={<PartyRoom />} />
+            <Route path="/anime/playlist" element={<Playlist />} />
             <Route path="/anime/leaderboard" element={<Leaderboard />} />
             <Route path="/anime/profile" element={<Profile />} />
           </Route>

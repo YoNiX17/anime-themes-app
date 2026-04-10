@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { TrendingUp, Crown, Users } from 'lucide-react';
+import { TrendingUp, Crown, Users, ListMusic } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { AnimeCard } from '../components/AnimeCard';
 import { Loader } from '../components/Loader';
@@ -78,6 +78,10 @@ export const Home: React.FC = () => {
             <button onClick={handleCreateParty} className="hero-party-btn">
               <Users size={18} />
               Créer une Party
+            </button>
+            <button onClick={() => navigate('/anime/playlist')} className="hero-party-btn" style={{ background: 'var(--accent-gradient)' }}>
+              <ListMusic size={18} />
+              Playlist
             </button>
           </div>
         </section>
