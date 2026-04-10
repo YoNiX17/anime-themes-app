@@ -1,19 +1,21 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import {
   Upload, FileText, Play, ChevronRight, Trash2, ArrowLeft,
   CheckCircle2, AlertTriangle, XCircle, Loader2, ListMusic,
-  SkipForward, Music, Save, Plus, GripVertical,
+  SkipForward, Music, Save, Plus, GripVertical, Search,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ref, set } from 'firebase/database';
 import { db } from '../services/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../components/Toast';
-import { parseText, resolveAll, type ResolvedTheme } from '../utils/playlistParser';
+import { parseText, resolveAll, searchAnimesWithThemes, type ResolvedTheme } from '../utils/playlistParser';
 import { refreshThemeRatingMeta } from '../utils/ratingMeta';
+import type { Anime, AnimeTheme, Video } from '../services/api';
 import './Playlist.css';
 
 type Phase = 'input' | 'resolving' | 'review' | 'playing';
+type InputTab = 'search' | 'text';
 
 const STATUS_ICON = {
   found: <CheckCircle2 size={16} className="pl-status-ok" />,
@@ -27,6 +29,13 @@ const STATUS_LABEL = {
   'not-found': 'Non trouvé',
 };
 
+/** Get the best video from a theme */
+function getBestVideo(theme: AnimeTheme): Video | undefined {
+  const entry = theme.animethemeentries?.[0];
+  if (!entry?.videos?.length) return undefined;
+  return [...entry.videos].sort((a, b) => (b.resolution || 0) - (a.resolution || 0))[0];
+}
+
 export const Playlist: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -35,10 +44,18 @@ export const Playlist: React.FC = () => {
 
   // ── State ──
   const [phase, setPhase] = useState<Phase>('input');
+  const [inputTab, setInputTab] = useState<InputTab>('search');
   const [rawText, setRawText] = useState('');
   const [items, setItems] = useState<ResolvedTheme[]>([]);
   const [resolveProgress, setResolveProgress] = useState(0);
   const [resolveTotal, setResolveTotal] = useState(0);
+
+  // Search mode state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Anime[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [expandedAnime, setExpandedAnime] = useState<number | null>(null);
+  const searchTimer = useRef<ReturnType<typeof setTimeout>>(null);
 
   // Playing state
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -46,7 +63,88 @@ export const Playlist: React.FC = () => {
   const [savingIdx, setSavingIdx] = useState<number | null>(null);
 
   // ══════════════════════════════════
-  // Phase 1: INPUT
+  // SEARCH MODE
+  // ══════════════════════════════════
+
+  useEffect(() => {
+    if (!searchQuery.trim() || searchQuery.trim().length < 2) {
+      setSearchResults([]);
+      return;
+    }
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(async () => {
+      setSearchLoading(true);
+      try {
+        const results = await searchAnimesWithThemes(searchQuery);
+        setSearchResults(results.filter(a => a.animethemes?.length > 0).slice(0, 10));
+      } catch {
+        setSearchResults([]);
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 400);
+    return () => { if (searchTimer.current) clearTimeout(searchTimer.current); };
+  }, [searchQuery]);
+
+  const addThemeToPlaylist = (anime: Anime, theme: AnimeTheme) => {
+    const video = getBestVideo(theme);
+    const item: ResolvedTheme = {
+      parsed: {
+        raw: `${anime.name} ${theme.type}${theme.sequence || ''}`,
+        animeName: anime.name,
+        themeType: theme.type as 'OP' | 'ED',
+        sequence: theme.sequence || 1,
+      },
+      status: 'found',
+      anime,
+      theme,
+      video,
+      matchedName: anime.name,
+    };
+    setItems(prev => {
+      // Avoid duplicates
+      if (prev.some(p => p.theme?.id === theme.id)) {
+        showToast('Ce thème est déjà dans la playlist.', 'info');
+        return prev;
+      }
+      if (prev.length >= 50) {
+        showToast('Maximum 50 thèmes par playlist.', 'error');
+        return prev;
+      }
+      showToast(`${anime.name} — ${theme.type}${theme.sequence || ''} ajouté !`, 'success');
+      return [...prev, item];
+    });
+  };
+
+  const addAllThemes = (anime: Anime) => {
+    let added = 0;
+    for (const theme of anime.animethemes || []) {
+      const video = getBestVideo(theme);
+      const exists = items.some(p => p.theme?.id === theme.id);
+      if (exists || items.length + added >= 50) continue;
+      items.push({
+        parsed: {
+          raw: `${anime.name} ${theme.type}${theme.sequence || ''}`,
+          animeName: anime.name,
+          themeType: theme.type as 'OP' | 'ED',
+          sequence: theme.sequence || 1,
+        },
+        status: 'found',
+        anime,
+        theme,
+        video,
+        matchedName: anime.name,
+      });
+      added++;
+    }
+    if (added > 0) {
+      setItems([...items]);
+      showToast(`${added} thème${added > 1 ? 's' : ''} de ${anime.name} ajouté${added > 1 ? 's' : ''} !`, 'success');
+    }
+  };
+
+  // ══════════════════════════════════
+  // Phase 1: TEXT INPUT
   // ══════════════════════════════════
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -72,9 +170,9 @@ jjk ed2
 aot opening 3
 bleach OP13
 frieren op
-chainsaw man ending 1
-demon slayer ed 1
-spy x family op`;
+unravel
+blue bird
+chainsaw man ending 1`;
 
   // ══════════════════════════════════
   // Phase 2: RESOLVING
@@ -86,8 +184,8 @@ spy x family op`;
       showToast('Aucune entrée détectée. Vérifie le format.', 'error');
       return;
     }
-    if (parsed.length > 50) {
-      showToast('Maximum 50 thèmes par playlist.', 'error');
+    if (parsed.length + items.length > 50) {
+      showToast(`Maximum 50 thèmes. Il y en a déjà ${items.length}.`, 'error');
       return;
     }
 
@@ -99,7 +197,7 @@ spy x family op`;
       setResolveProgress(idx + 1);
     });
 
-    setItems(results);
+    setItems(prev => [...prev, ...results]);
     setPhase('review');
 
     const found = results.filter(r => r.status === 'found').length;
@@ -128,10 +226,17 @@ spy x family op`;
     }
     setPhase('playing');
     setCurrentIdx(0);
-    // Initialize scores for all playable items
     const initScores: Record<number, { music: number; animation: number }> = {};
     playableItems.forEach((_, i) => { initScores[i] = { music: 50, animation: 50 }; });
     setScores(initScores);
+  };
+
+  const goToReviewFromInput = () => {
+    if (items.length === 0) {
+      showToast('Ajoute au moins un thème à la playlist.', 'error');
+      return;
+    }
+    setPhase('review');
   };
 
   // ══════════════════════════════════
@@ -150,7 +255,6 @@ spy x family op`;
       const themeId = current.theme.id;
       const themeSlug = `${current.theme.type}${current.theme.sequence || ''}`;
 
-      // Save to user's themeRatings
       await set(ref(db, `users/${user.uid}/themeRatings/${themeId}`), {
         music: myScores.music,
         animation: myScores.animation,
@@ -161,13 +265,11 @@ spy x family op`;
         timestamp: Date.now(),
       });
 
-      // Save to global themeRatings
       await set(ref(db, `themeRatings/${themeId}/users/${user.uid}`), {
         music: myScores.music,
         animation: myScores.animation,
       });
 
-      // Refresh meta
       await refreshThemeRatingMeta(themeId, {
         animeName: current.anime.name,
         animeId: current.anime.id,
@@ -183,7 +285,6 @@ spy x family op`;
       setSavingIdx(null);
     }
 
-    // Move to next or finish
     if (!isLast) {
       setCurrentIdx(prev => prev + 1);
     } else {
@@ -222,58 +323,227 @@ spy x family op`;
         <div className="pl-hero">
           <div className="pl-hero-icon"><ListMusic size={36} /></div>
           <h1 className="pl-hero-title"><span className="text-gradient">Playlist de notation</span></h1>
-          <p className="pl-hero-sub">Importe une liste d'OP/ED, on trouve les vidéos, tu notes tout d'un coup.</p>
+          <p className="pl-hero-sub">Cherche des OP/ED, importe une liste, ou tape des noms de chansons — on trouve tout.</p>
         </div>
 
         {/* ═══ INPUT PHASE ═══ */}
         {phase === 'input' && (
-          <div className="pl-input-section">
-            <div className="pl-input-card glass-panel">
-              <div className="pl-input-header">
-                <FileText size={18} />
-                <span>Colle ta liste ou importe un fichier .txt</span>
+          <div className="pl-input-phase">
+            {/* Playlist queue preview */}
+            {items.length > 0 && (
+              <div className="pl-queue-preview glass-panel">
+                <div className="pl-queue-header">
+                  <h3><ListMusic size={16} /> Playlist ({items.length} thème{items.length > 1 ? 's' : ''})</h3>
+                  <div className="pl-queue-actions">
+                    <button className="pl-btn-secondary" onClick={() => setItems([])}>
+                      <Trash2 size={14} /> Vider
+                    </button>
+                    <button className="pl-btn-primary" onClick={goToReviewFromInput}>
+                      <Play size={14} /> Continuer
+                    </button>
+                  </div>
+                </div>
+                <div className="pl-queue-items">
+                  {items.map((item, idx) => (
+                    <div key={idx} className="pl-queue-item">
+                      <span className="pl-queue-item-name">{item.matchedName || item.parsed.animeName}</span>
+                      {item.theme && (
+                        <span className="pl-match-theme">{item.theme.type}{item.theme.sequence || ''}</span>
+                      )}
+                      <button className="pl-item-remove" onClick={() => removeItem(idx)}><Trash2 size={12} /></button>
+                    </div>
+                  ))}
+                </div>
               </div>
+            )}
 
-              <textarea
-                className="pl-textarea"
-                placeholder={`Formats acceptés :\n\nnaruto op 1\njjk ed2\naot opening 3\nbleach OP13\nfrieren op\nchainsaw man ending 1\n\nAbréviations reconnues : snk, mha, csm, hxh, sao, fmab…`}
-                value={rawText}
-                onChange={e => setRawText(e.target.value)}
-                rows={12}
-              />
-
-              <div className="pl-input-actions">
-                <button className="pl-btn-secondary" onClick={() => fileInputRef.current?.click()}>
-                  <Upload size={16} /> Importer .txt
-                </button>
-                <input ref={fileInputRef} type="file" accept=".txt,.text,text/plain" hidden onChange={handleFileUpload} />
-
-                <button className="pl-btn-secondary" onClick={() => setRawText(exampleText)}>
-                  <Plus size={16} /> Exemple
-                </button>
-
-                <button
-                  className="pl-btn-primary"
-                  onClick={handleResolve}
-                  disabled={!rawText.trim()}
-                >
-                  <Play size={16} /> Résoudre ({parseText(rawText).length} thèmes)
-                </button>
-              </div>
+            {/* Tabs */}
+            <div className="pl-tabs">
+              <button
+                className={`pl-tab ${inputTab === 'search' ? 'pl-tab-active' : ''}`}
+                onClick={() => setInputTab('search')}
+              >
+                <Search size={15} /> Rechercher
+              </button>
+              <button
+                className={`pl-tab ${inputTab === 'text' ? 'pl-tab-active' : ''}`}
+                onClick={() => setInputTab('text')}
+              >
+                <FileText size={15} /> Importer du texte
+              </button>
             </div>
 
-            <div className="pl-format-help glass-panel">
-              <h3>Formats reconnus</h3>
-              <ul>
-                <li><code>naruto op 1</code> — classique</li>
-                <li><code>jjk ed2</code> — abréviation collée</li>
-                <li><code>aot opening 3</code> — mot complet</li>
-                <li><code>frieren op</code> — sans numéro = OP1</li>
-                <li><code>bleach OP13</code> — majuscules OK</li>
-                <li><code>demon slayer - ed 1</code> — séparateurs ignorés</li>
-              </ul>
-              <p className="pl-format-note">Abréviations : snk, mha, csm, hxh, sao, fmab, jjk, kny, opm, ve, sg, cote…</p>
-            </div>
+            {/* ── Search tab ── */}
+            {inputTab === 'search' && (
+              <div className="pl-search-section">
+                <div className="pl-search-bar glass-panel">
+                  <Search size={18} className="pl-search-icon" />
+                  <input
+                    type="text"
+                    placeholder="Recherche un anime, une abréviation, un nom de chanson…"
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    className="pl-search-input"
+                    autoFocus
+                  />
+                  {searchLoading && <Loader2 size={16} className="pl-spin" />}
+                </div>
+
+                {searchResults.length > 0 && (
+                  <div className="pl-search-results">
+                    {searchResults.map(anime => {
+                      const isExpanded = expandedAnime === anime.id;
+                      const themes = anime.animethemes || [];
+                      const ops = themes.filter(t => t.type === 'OP');
+                      const eds = themes.filter(t => t.type === 'ED');
+                      const image = anime.images?.find(i => i.facet === 'Large Cover' || i.facet === 'Small Cover')?.link;
+
+                      return (
+                        <div key={anime.id} className={`pl-search-anime glass-panel ${isExpanded ? 'pl-anime-expanded' : ''}`}>
+                          <div className="pl-anime-header" onClick={() => setExpandedAnime(isExpanded ? null : anime.id)}>
+                            {image && <img src={image} alt="" className="pl-anime-thumb" />}
+                            <div className="pl-anime-info">
+                              <span className="pl-anime-name">{anime.name}</span>
+                              <span className="pl-anime-meta">
+                                {anime.year && `${anime.year}`}
+                                {anime.season && ` · ${anime.season}`}
+                                {` · ${ops.length} OP · ${eds.length} ED`}
+                              </span>
+                            </div>
+                            <div className="pl-anime-actions">
+                              <button
+                                className="pl-btn-secondary pl-btn-sm"
+                                onClick={(e) => { e.stopPropagation(); addAllThemes(anime); }}
+                                title="Ajouter tout"
+                              >
+                                <Plus size={13} /> Tout
+                              </button>
+                              <ChevronRight size={16} className={`pl-chevron ${isExpanded ? 'pl-chevron-open' : ''}`} />
+                            </div>
+                          </div>
+
+                          {isExpanded && (
+                            <div className="pl-anime-themes">
+                              {ops.length > 0 && (
+                                <div className="pl-theme-group">
+                                  <span className="pl-theme-group-label">Openings</span>
+                                  {ops.map(theme => {
+                                    const hasVideo = !!getBestVideo(theme);
+                                    const alreadyAdded = items.some(p => p.theme?.id === theme.id);
+                                    return (
+                                      <button
+                                        key={theme.id}
+                                        className={`pl-theme-btn ${alreadyAdded ? 'pl-theme-added' : ''} ${!hasVideo ? 'pl-theme-novideo' : ''}`}
+                                        onClick={() => addThemeToPlaylist(anime, theme)}
+                                        disabled={alreadyAdded}
+                                      >
+                                        <span className="pl-theme-tag-op">OP{theme.sequence || ''}</span>
+                                        {alreadyAdded && <CheckCircle2 size={12} />}
+                                        {!hasVideo && <span className="pl-theme-no-vid-label">pas de vidéo</span>}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                              {eds.length > 0 && (
+                                <div className="pl-theme-group">
+                                  <span className="pl-theme-group-label">Endings</span>
+                                  {eds.map(theme => {
+                                    const hasVideo = !!getBestVideo(theme);
+                                    const alreadyAdded = items.some(p => p.theme?.id === theme.id);
+                                    return (
+                                      <button
+                                        key={theme.id}
+                                        className={`pl-theme-btn ${alreadyAdded ? 'pl-theme-added' : ''} ${!hasVideo ? 'pl-theme-novideo' : ''}`}
+                                        onClick={() => addThemeToPlaylist(anime, theme)}
+                                        disabled={alreadyAdded}
+                                      >
+                                        <span className="pl-theme-tag-ed">ED{theme.sequence || ''}</span>
+                                        {alreadyAdded && <CheckCircle2 size={12} />}
+                                        {!hasVideo && <span className="pl-theme-no-vid-label">pas de vidéo</span>}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {searchQuery.trim().length >= 2 && !searchLoading && searchResults.length === 0 && (
+                  <div className="pl-search-empty glass-panel">
+                    <p>Aucun résultat pour « {searchQuery} »</p>
+                    <p className="pl-search-hint">Essaie un autre nom, une abréviation (snk, jjk, csm…) ou un nom de chanson</p>
+                  </div>
+                )}
+
+                {searchQuery.trim().length < 2 && (
+                  <div className="pl-search-placeholder glass-panel">
+                    <Search size={28} />
+                    <p>Tape un nom d'anime pour voir ses OP/ED</p>
+                    <p className="pl-search-hint">Abréviations, noms FR/EN/JP, noms de chansons — tout fonctionne</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Text import tab ── */}
+            {inputTab === 'text' && (
+              <div className="pl-text-section">
+                <div className="pl-input-card glass-panel">
+                  <div className="pl-input-header">
+                    <FileText size={18} />
+                    <span>Colle ta liste ou importe un fichier .txt</span>
+                  </div>
+
+                  <textarea
+                    className="pl-textarea"
+                    placeholder={`Formats acceptés :\n\nnaruto op 1\njjk ed2\naot opening 3\nbleach OP13\nfrieren op\nunravel\nblue bird\n\nNoms de chansons aussi acceptés !`}
+                    value={rawText}
+                    onChange={e => setRawText(e.target.value)}
+                    rows={12}
+                  />
+
+                  <div className="pl-input-actions">
+                    <button className="pl-btn-secondary" onClick={() => fileInputRef.current?.click()}>
+                      <Upload size={16} /> Importer .txt
+                    </button>
+                    <input ref={fileInputRef} type="file" accept=".txt,.text,text/plain" hidden onChange={handleFileUpload} />
+
+                    <button className="pl-btn-secondary" onClick={() => setRawText(exampleText)}>
+                      <Plus size={16} /> Exemple
+                    </button>
+
+                    <button
+                      className="pl-btn-primary"
+                      onClick={handleResolve}
+                      disabled={!rawText.trim()}
+                    >
+                      <Play size={16} /> Résoudre ({parseText(rawText).length} thèmes)
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pl-format-help glass-panel">
+                  <h3>Formats reconnus</h3>
+                  <ul>
+                    <li><code>naruto op 1</code> — classique</li>
+                    <li><code>jjk ed2</code> — abréviation collée</li>
+                    <li><code>aot opening 3</code> — mot complet</li>
+                    <li><code>frieren op</code> — sans numéro = OP1</li>
+                    <li><code>unravel</code> — nom de chanson</li>
+                    <li><code>blue bird</code> — recherche directe</li>
+                    <li><code>demon slayer - ed 1</code> — séparateurs ignorés</li>
+                  </ul>
+                  <p className="pl-format-note">Abréviations : snk, mha, csm, hxh, sao, fmab, jjk, kny, opm…</p>
+                  <p className="pl-format-note">Typos corrigées : opning, openning, eding, endding…</p>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -299,7 +569,7 @@ spy x family op`;
               <h2>{items.length} thème{items.length > 1 ? 's' : ''} dans la playlist</h2>
               <div className="pl-review-actions">
                 <button className="pl-btn-secondary" onClick={() => setPhase('input')}>
-                  <ArrowLeft size={15} /> Modifier
+                  <Plus size={15} /> Ajouter
                 </button>
                 {!user && <p className="pl-login-warn">Connecte-toi pour noter !</p>}
                 <button

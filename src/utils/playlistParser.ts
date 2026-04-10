@@ -4,18 +4,18 @@ import { searchAnime } from '../services/api';
 /* ═══════════════════════════════════════════
    Playlist Parser — Intelligent OP/ED resolver
    ═══════════════════════════════════════════
-   Supported formats (all case-insensitive, with typos handled):
-     naruto op 1
-     jjk ed2
-     aot opening 3
-     bleach OP13
-     demon slayer ed 1
-     frieren op          (default: sequence 1)
-     chainsaw man ending 12
-     one piece - op 4
-     snk s2 op1
-     Naruto Shippuden OP 16
-     blue lock ending2
+   Supported formats (all case-insensitive, with typos):
+     naruto op 1          — classique
+     jjk ed2              — abréviation collée
+     aot opening 3        — mot complet
+     bleach OP13           — majuscules OK
+     frieren op            — sans numéro = séquence 1
+     demon slayer - ed 1   — séparateurs ignorés
+     csm ending 12         — abréviation + mot complet
+     snk s2 op1            — saison ignorée
+     Guren no Yumiya       — nom de chanson → recherche directe
+     unravel               — nom de chanson → Tokyo Ghoul OP1
+     blue bird             — nom de chanson → Naruto Shippuden OP3
    ═══════════════════════════════════════════ */
 
 export interface ParsedLine {
@@ -23,6 +23,7 @@ export interface ParsedLine {
   animeName: string;
   themeType: 'OP' | 'ED';
   sequence: number;
+  isSongSearch?: boolean; // true when input looks like a song name, not anime+OP format
 }
 
 export interface ResolvedTheme {
@@ -32,6 +33,7 @@ export interface ResolvedTheme {
   theme?: AnimeTheme;
   video?: Video;
   matchedName?: string;
+  songName?: string;
 }
 
 // ── Regex patterns for theme type detection ──
@@ -40,6 +42,47 @@ const ED_PATTERNS = /\b(ed|ending)\s*(\d+)?\b/i;
 
 // Clean separators: dashes, colons, pipes between anime name and theme
 const SEPARATORS = /\s*[-–—:|]\s*/g;
+
+// Season patterns to strip (s2, season 3, saison 2, etc.)
+const SEASON_PATTERN = /\b(?:s|season|saison)\s*(\d+)\b/gi;
+
+// ── Levenshtein distance for fuzzy name matching ──
+function levenshtein(a: string, b: string): number {
+  const la = a.length, lb = b.length;
+  if (la === 0) return lb;
+  if (lb === 0) return la;
+  const dp: number[][] = Array.from({ length: la + 1 }, (_, i) =>
+    Array.from({ length: lb + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0))
+  );
+  for (let i = 1; i <= la; i++) {
+    for (let j = 1; j <= lb; j++) {
+      dp[i][j] = a[i - 1] === b[j - 1]
+        ? dp[i - 1][j - 1]
+        : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+    }
+  }
+  return dp[la][lb];
+}
+
+/**
+ * Score how well an anime name matches the query (0 = perfect, higher = worse)
+ */
+function nameMatchScore(query: string, animeName: string): number {
+  const q = query.toLowerCase();
+  const name = animeName.toLowerCase();
+  // Exact match
+  if (q === name) return 0;
+  // Name starts with query
+  if (name.startsWith(q)) return 1;
+  // Name contains query as substring
+  if (name.includes(q)) return 2;
+  // Levenshtein distance (normalized)
+  const dist = levenshtein(q, name);
+  const maxLen = Math.max(q.length, name.length);
+  const ratio = dist / maxLen;
+  if (ratio < 0.3) return 3 + ratio * 10;
+  return 10 + ratio * 10;
+}
 
 /**
  * Parse a single raw line into structured data.
@@ -68,9 +111,11 @@ export function parseLine(raw: string): ParsedLine | null {
   let sequence = 1;
   let animeName = normalized;
 
-  // Try to extract OP pattern
+  // Try to extract OP/ED pattern
   const opMatch = normalized.match(OP_PATTERNS);
   const edMatch = normalized.match(ED_PATTERNS);
+
+  const hasThemeIndicator = !!(opMatch || edMatch);
 
   if (edMatch) {
     themeType = 'ED';
@@ -82,6 +127,9 @@ export function parseLine(raw: string): ParsedLine | null {
     animeName = normalized.replace(OP_PATTERNS, '');
   }
 
+  // Strip season info (kept for later but not used in name)
+  animeName = animeName.replace(SEASON_PATTERN, '');
+
   // Clean up anime name: remove separators at edges, extra spaces
   animeName = animeName
     .replace(SEPARATORS, ' ')
@@ -90,15 +138,19 @@ export function parseLine(raw: string): ParsedLine | null {
 
   if (!animeName) return null;
 
-  return { raw: line, animeName, themeType, sequence };
+  return {
+    raw: line,
+    animeName,
+    themeType,
+    sequence,
+    isSongSearch: !hasThemeIndicator,
+  };
 }
 
 /**
  * Parse a full text block (multi-line) into parsed entries.
- * Supports newlines, semicolons, and commas as separators.
  */
 export function parseText(text: string): ParsedLine[] {
-  // Split on newlines; also treat semicolons as line separators
   const raw = text
     .split(/[\n;]+/)
     .map(s => s.trim())
@@ -140,38 +192,125 @@ function findTheme(anime: Anime, type: 'OP' | 'ED', seq: number): AnimeTheme | u
 function getBestVideo(theme: AnimeTheme): Video | undefined {
   const entry = theme.animethemeentries?.[0];
   if (!entry?.videos?.length) return undefined;
-  // Prefer highest resolution
   return [...entry.videos].sort((a, b) => (b.resolution || 0) - (a.resolution || 0))[0];
 }
 
+const AT_BASE = 'https://api.animethemes.moe';
+
 /**
- * Resolve a single parsed line against the AnimeThemes API.
- * Uses the same smart search as the rest of the app (abbreviations + Jikan fuzzy).
+ * Search AnimeThemes for a song name directly.
+ * Returns matching themes with anime context.
+ */
+async function searchBySongName(songName: string): Promise<ResolvedTheme | null> {
+  try {
+    const res = await fetch(
+      `${AT_BASE}/search?q=${encodeURIComponent(songName)}&fields[search]=animethemes&include[animetheme]=anime.images,animethemeentries.videos`
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    const themes = data?.search?.animethemes as Array<{
+      id: number; slug: string; type: string; sequence: number;
+      anime: Anime;
+      song?: { title?: string };
+      animethemeentries: Array<{ videos: Video[] }>;
+    }>;
+    if (!themes?.length) return null;
+
+    // Find the best matching theme (prioritize TV anime over movies/specials)
+    const best = themes[0];
+    const anime: Anime = {
+      ...best.anime,
+      animethemes: [{ id: best.id, slug: best.slug, type: best.type, sequence: best.sequence, animethemeentries: best.animethemeentries as AnimeTheme['animethemeentries'] }],
+    };
+
+    const theme: AnimeTheme = {
+      id: best.id,
+      slug: best.slug,
+      type: best.type,
+      sequence: best.sequence,
+      animethemeentries: best.animethemeentries as AnimeTheme['animethemeentries'],
+    };
+    const video = getBestVideo(theme);
+
+    return {
+      parsed: { raw: songName, animeName: songName, themeType: (best.type as 'OP' | 'ED') || 'OP', sequence: best.sequence || 1, isSongSearch: true },
+      status: 'found',
+      anime,
+      theme,
+      video,
+      matchedName: best.anime.name,
+      songName: best.song?.title,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Resolve a single line: tries anime name search, then song name search.
+ * Uses Levenshtein scoring to pick the best anime match.
  */
 export async function resolveLine(parsed: ParsedLine): Promise<ResolvedTheme> {
   try {
+    // Strategy 1: If it looks like a song name (no OP/ED indicator), try song search first
+    if (parsed.isSongSearch) {
+      const songResult = await searchBySongName(parsed.animeName);
+      if (songResult) {
+        songResult.parsed = parsed;
+        return songResult;
+      }
+    }
+
+    // Strategy 2: Standard anime name search (with abbreviations + Jikan fuzzy)
     const results = await searchAnime(parsed.animeName);
 
     if (!results.length) {
+      // Strategy 3: Last resort — try song name search even for OP/ED format
+      if (!parsed.isSongSearch) {
+        const songResult = await searchBySongName(parsed.raw);
+        if (songResult) {
+          songResult.parsed = parsed;
+          return songResult;
+        }
+      }
       return { parsed, status: 'not-found' };
     }
 
-    // Check if the top result has the right theme
-    const best = results[0];
-    const theme = findTheme(best, parsed.themeType, parsed.sequence);
+    // Sort results by name similarity to the query
+    const scored = results.map(a => ({
+      anime: a,
+      score: nameMatchScore(parsed.animeName, a.name),
+    }));
+    scored.sort((a, b) => a.score - b.score);
 
+    // Try multiple results — find the first one with a matching theme
+    for (const { anime } of scored.slice(0, 5)) {
+      const theme = findTheme(anime, parsed.themeType, parsed.sequence);
+      if (theme && theme.type === parsed.themeType) {
+        const video = getBestVideo(theme);
+        const isExact = (theme.sequence || 1) === parsed.sequence;
+        return {
+          parsed,
+          status: isExact ? 'found' : 'approx',
+          anime,
+          theme,
+          video,
+          matchedName: anime.name,
+        };
+      }
+    }
+
+    // Fallback: use the best-scored anime, any theme
+    const best = scored[0].anime;
+    const theme = findTheme(best, parsed.themeType, parsed.sequence);
     if (!theme) {
       return { parsed, status: 'approx', anime: best, matchedName: best.name };
     }
 
     const video = getBestVideo(theme);
-    const isExact =
-      theme.type === parsed.themeType &&
-      (theme.sequence || 1) === parsed.sequence;
-
     return {
       parsed,
-      status: isExact ? 'found' : 'approx',
+      status: 'approx',
       anime: best,
       theme,
       video,
@@ -183,8 +322,7 @@ export async function resolveLine(parsed: ParsedLine): Promise<ResolvedTheme> {
 }
 
 /**
- * Resolve all parsed lines with concurrency control to avoid hammering APIs.
- * Processes 2 at a time with a small delay between batches.
+ * Resolve all lines with concurrency=2 and batching.
  */
 export async function resolveAll(
   lines: ParsedLine[],
@@ -205,11 +343,19 @@ export async function resolveAll(
         })
       )
     );
-    // Small delay between batches to be API-friendly
     if (i + BATCH_SIZE < lines.length) {
       await new Promise(r => setTimeout(r, 400));
     }
   }
 
   return results;
+}
+
+/**
+ * Search anime and return all their themes for the search-to-add feature.
+ * Returns anime objects with full theme lists.
+ */
+export async function searchAnimesWithThemes(query: string): Promise<Anime[]> {
+  if (!query.trim()) return [];
+  return searchAnime(query.trim().slice(0, 200));
 }
