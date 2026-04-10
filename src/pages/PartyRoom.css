@@ -41,6 +41,116 @@
 .waiting-icon { color: rgba(124,58,237,0.35); margin-bottom: 1.5rem; animation: pulseDot 2s infinite; z-index: 1; }
 @keyframes pulseDot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
+/* ═══ QUEUE ═══ */
+.queue-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-bright);
+  margin-bottom: 1rem;
+  z-index: 1;
+}
+
+.queue-list {
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 1.5rem;
+  z-index: 1;
+}
+
+.queue-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.7rem;
+  background: rgba(124, 58, 237, 0.06);
+  border: 1px solid rgba(124, 58, 237, 0.12);
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  transition: border-color var(--transition-fast);
+}
+
+.queue-item:hover {
+  border-color: rgba(124, 58, 237, 0.3);
+}
+
+.queue-item-num {
+  font-weight: 800;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  min-width: 16px;
+  text-align: right;
+}
+
+.queue-item-name {
+  flex: 1;
+  color: var(--text-primary);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.queue-item-badge {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--accent-primary-light);
+  background: rgba(124, 58, 237, 0.15);
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+}
+
+.queue-item-novideo {
+  font-size: 0.62rem;
+  color: var(--accent-warm);
+  font-weight: 600;
+}
+
+.queue-item-remove {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.2rem;
+  border-radius: var(--radius-sm);
+  transition: color var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.queue-item-remove:hover {
+  color: #ef4444;
+}
+
+.start-queue-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 2rem;
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: white;
+  background: var(--accent-gradient);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-glow-purple);
+  z-index: 1;
+}
+
+.start-queue-btn:hover {
+  transform: translateY(-2px) scale(1.02);
+  filter: brightness(1.1);
+}
+
+.queue-waiting-msg {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  z-index: 1;
+}
+
 /* ═══ READY CHECK ═══ */
 .ready-check-container { padding: 3rem 2rem; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 2rem; }
 .ready-theme-preview { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; }

@@ -44,12 +44,19 @@ export interface ThemeSelection {
   startedAt: number; // Server timestamp for video sync
 }
 
+export interface QueueItem {
+  anime: { id: number; name: string; slug: string; year: number; season: string };
+  theme: { id: number; slug: string; type: string; sequence: number };
+  video: { id: number; basename: string; link: string; resolution: number } | null;
+}
+
 export interface PartyRoom {
   id: string;
   hostId: string;
   createdAt: number;
   phase: RoomPhase;
   currentTheme: ThemeSelection | null;
+  themeQueue?: QueueItem[];
   users?: Record<string, PartyUser>;
   chat?: Record<string, ChatMessage>;
   playHistory?: Record<string, {
@@ -108,19 +115,66 @@ export const leavePartyPresence = async (roomId: string, userId: string) => {
    ═══════════════════════════════════════════ */
 
 /**
- * Host selects a theme → moves to ready-check
+ * Host adds a theme to the queue (does NOT start it)
+ */
+export const addThemeToQueue = async (
+  roomId: string, anime: Anime, theme: AnimeTheme, video: Video | null
+) => {
+  const queueRef = ref(db, `parties/${roomId}/themeQueue`);
+  const snap = await get(queueRef);
+  const queue: QueueItem[] = snap.exists() ? snap.val() : [];
+  queue.push({
+    anime: { id: anime.id, name: anime.name, slug: anime.slug, year: anime.year, season: anime.season },
+    theme: { id: theme.id, slug: theme.slug, type: theme.type, sequence: theme.sequence },
+    video: video ? { id: video.id, basename: video.basename, link: video.link, resolution: video.resolution } : null,
+  });
+  await set(queueRef, queue);
+};
+
+/**
+ * Host removes a theme from the queue by index
+ */
+export const removeFromQueue = async (roomId: string, index: number) => {
+  const queueRef = ref(db, `parties/${roomId}/themeQueue`);
+  const snap = await get(queueRef);
+  if (!snap.exists()) return;
+  const queue: QueueItem[] = snap.val();
+  queue.splice(index, 1);
+  await set(queueRef, queue);
+};
+
+/**
+ * Host selects a theme directly (single pick) → moves to ready-check
  */
 export const selectThemeForRoom = async (
   roomId: string, anime: Anime, theme: AnimeTheme, video: Video | null
 ) => {
-  // Set the theme
   await set(ref(db, `parties/${roomId}/currentTheme`), {
     anime: { id: anime.id, name: anime.name, slug: anime.slug, year: anime.year, season: anime.season },
     theme: { id: theme.id, slug: theme.slug, type: theme.type, sequence: theme.sequence },
     video: video ? { id: video.id, basename: video.basename, link: video.link, resolution: video.resolution } : null,
-    startedAt: null, // Set when playing starts
+    startedAt: null,
   });
-  // Move to ready-check
+  await set(ref(db, `parties/${roomId}/phase`), 'ready-check');
+};
+
+/**
+ * Host starts the queue → pops first item, moves to ready-check
+ */
+export const startQueue = async (roomId: string) => {
+  const queueRef = ref(db, `parties/${roomId}/themeQueue`);
+  const snap = await get(queueRef);
+  if (!snap.exists()) return;
+  const queue: QueueItem[] = snap.val();
+  if (queue.length === 0) return;
+  
+  const first = queue.shift()!;
+  await set(queueRef, queue.length > 0 ? queue : null);
+  
+  await set(ref(db, `parties/${roomId}/currentTheme`), {
+    ...first,
+    startedAt: null,
+  });
   await set(ref(db, `parties/${roomId}/phase`), 'ready-check');
 };
 
@@ -156,18 +210,38 @@ export const triggerReveal = async (roomId: string) => {
 };
 
 /**
- * Host resets to waiting for next theme
+ * Host resets to waiting for next theme.
+ * If queue has items, auto-pops the next one → ready-check.
+ * Returns true if a queued theme was loaded.
  */
-export const resetToWaiting = async (roomId: string, users: Record<string, PartyUser>) => {
-  // Add to history before clearing
-  await set(ref(db, `parties/${roomId}/currentTheme`), null);
-  await set(ref(db, `parties/${roomId}/phase`), 'waiting');
-  
+export const resetToWaiting = async (roomId: string, users: Record<string, PartyUser>): Promise<boolean> => {
   // Reset all user ready/score states
   for (const uid of Object.keys(users)) {
     await set(ref(db, `parties/${roomId}/users/${uid}/ready`), false);
     await set(ref(db, `parties/${roomId}/users/${uid}/score`), null);
   }
+
+  // Check queue
+  const queueRef = ref(db, `parties/${roomId}/themeQueue`);
+  const snap = await get(queueRef);
+  if (snap.exists()) {
+    const queue: QueueItem[] = snap.val();
+    if (queue.length > 0) {
+      const next = queue.shift()!;
+      await set(queueRef, queue.length > 0 ? queue : null);
+      await set(ref(db, `parties/${roomId}/currentTheme`), {
+        ...next,
+        startedAt: null,
+      });
+      await set(ref(db, `parties/${roomId}/phase`), 'ready-check');
+      return true;
+    }
+  }
+
+  // No queue → go to waiting
+  await set(ref(db, `parties/${roomId}/currentTheme`), null);
+  await set(ref(db, `parties/${roomId}/phase`), 'waiting');
+  return false;
 };
 
 /* ═══════════════════════════════════════════

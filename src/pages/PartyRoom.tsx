@@ -10,13 +10,14 @@ import { db } from '../services/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { searchAnime } from '../services/api';
 import { 
-  selectThemeForRoom, startPlayback, moveToVoting, triggerReveal, 
+  startPlayback, moveToVoting, triggerReveal, 
   resetToWaiting, setUserReady, submitScore, sendChatMessage, 
-  closePartyRoom, joinPartyPresence, saveToHistory 
+  closePartyRoom, joinPartyPresence, saveToHistory,
+  addThemeToQueue, removeFromQueue, startQueue
 } from '../services/party';
 import { useToast } from '../components/Toast';
 import { refreshThemeRatingMeta } from '../utils/ratingMeta';
-import type { PartyRoom as PartyRoomType, PartyUser, ChatMessage, ThemeScore } from '../services/party';
+import type { PartyRoom as PartyRoomType, PartyUser, ChatMessage, ThemeScore, QueueItem } from '../services/party';
 import type { Anime, AnimeTheme } from '../services/api';
 import './PartyRoom.css';
 
@@ -202,10 +203,21 @@ export const PartyRoom: React.FC = () => {
     if (!id || room?.hostId !== user?.uid) return;
     const entry = theme.animethemeentries?.[0];
     const video = (entry && entry.videos?.length > 0) ? entry.videos[0] : null;
-    await selectThemeForRoom(id, anime, theme, video);
+    // Add to queue instead of direct select
+    await addThemeToQueue(id, anime, theme, video);
+    showToast(`${anime.name} — ${theme.type}${theme.sequence || ''} ajouté à la file`, "success");
+  };
+
+  const handleStartQueue = async () => {
+    if (!id) return;
+    await startQueue(id);
     setSearchResults([]);
     setSearchQuery('');
-    showToast(`Thème sélectionné : ${anime.name} — ${theme.type}${theme.sequence || ''}`, "success");
+  };
+
+  const handleRemoveFromQueue = async (index: number) => {
+    if (!id) return;
+    await removeFromQueue(id, index);
   };
 
   const handleStartPlayback = async () => {
@@ -235,7 +247,10 @@ export const PartyRoom: React.FC = () => {
 
   const handleNextTheme = async () => {
     if (!id) return;
-    await resetToWaiting(id, users);
+    const hasNext = await resetToWaiting(id, users);
+    if (hasNext) {
+      showToast('Thème suivant chargé depuis la file !', 'info');
+    }
   };
 
   const handleCloseRoom = async () => {
@@ -331,6 +346,7 @@ export const PartyRoom: React.FC = () => {
   const votedCount = userList.filter(([, u]) => u.score != null).length;
   const readyCount = userList.filter(([, u]) => u.ready).length;
   const phase = room?.phase || 'waiting';
+  const queue: QueueItem[] = room?.themeQueue || [];
 
   return (
     <div className="party-room-container">
@@ -370,9 +386,38 @@ export const PartyRoom: React.FC = () => {
             {/* ── WAITING ── */}
             {phase === 'waiting' && !room?.currentTheme && (
               <div className="waiting-container glass-panel">
-                <Play size={56} className="waiting-icon" />
-                <h3>En attente...</h3>
-                <p>{isHost ? 'Cherche un anime ci-dessous pour lancer un thème.' : 'Le host va sélectionner un OP ou ED.'}</p>
+                {queue.length === 0 ? (
+                  <>
+                    <Play size={56} className="waiting-icon" />
+                    <h3>En attente...</h3>
+                    <p>{isHost ? 'Cherche des animes ci-dessous et ajoute des thèmes à la file.' : 'Le host prépare la playlist.'}</p>
+                  </>
+                ) : (
+                  <>
+                    <h3 className="queue-title">File d'attente ({queue.length} thème{queue.length > 1 ? 's' : ''})</h3>
+                    <div className="queue-list">
+                      {queue.map((item, idx) => (
+                        <div key={idx} className="queue-item">
+                          <span className="queue-item-num">{idx + 1}</span>
+                          <span className="queue-item-name">{item.anime.name}</span>
+                          <span className="queue-item-badge">{item.theme.type}{item.theme.sequence || ''}</span>
+                          {!item.video && <span className="queue-item-novideo">pas de vidéo</span>}
+                          {isHost && (
+                            <button className="queue-item-remove" onClick={() => handleRemoveFromQueue(idx)} title="Retirer">
+                              <Trash2 size={12} />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    {isHost && (
+                      <button className="start-queue-btn" onClick={handleStartQueue}>
+                        <Play size={20} fill="white" /> Lancer la playlist ({queue.length} thème{queue.length > 1 ? 's' : ''})
+                      </button>
+                    )}
+                    {!isHost && <p className="queue-waiting-msg">Le host va bientôt lancer…</p>}
+                  </>
+                )}
               </div>
             )}
 
@@ -622,7 +667,7 @@ export const PartyRoom: React.FC = () => {
                 {isHost && (
                   <button className="next-theme-btn" onClick={handleNextTheme}>
                     <ArrowRight size={18} />
-                    Thème suivant
+                    {queue.length > 0 ? `Thème suivant (${queue.length} restant${queue.length > 1 ? 's' : ''})` : 'Thème suivant'}
                   </button>
                 )}
               </div>
@@ -725,7 +770,7 @@ export const PartyRoom: React.FC = () => {
         {/* ═══ Host search — bottom panel ═══ */}
         {isHost && phase === 'waiting' && (
           <div className="host-controls glass-panel">
-            <h3><Search size={18} /> Choisir un thème</h3>
+            <h3><Search size={18} /> Ajouter des thèmes</h3>
             <form onSubmit={handleSearch} className="host-search-form">
               <input type="text" placeholder="Ex: KNY, SNK, Naruto..." value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)} className="host-search-input" />
@@ -747,7 +792,7 @@ export const PartyRoom: React.FC = () => {
                       <span className="search-result-meta">{anime.year} · {anime.season}</span>
                       <div className="theme-buttons">
                         {anime.animethemes?.map(theme => (
-                          <button key={theme.id} onClick={() => handleSelectTheme(anime, theme)} className="play-theme-btn">
+                          <button key={theme.id} onClick={() => handleSelectTheme(anime, theme)} className="play-theme-btn" title="Ajouter à la file">
                             <Play size={12} /> {theme.type}{theme.sequence || ''}
                           </button>
                         ))}
