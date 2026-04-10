@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Play, User as UserIcon, LogOut, Trophy, UserCircle } from 'lucide-react';
+import { Search, Play, User as UserIcon, LogOut, Trophy, UserCircle, ListMusic } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useSection } from '../contexts/SectionContext';
@@ -75,6 +75,12 @@ export const Header: React.FC<HeaderProps> = ({ initialQuery = '' }) => {
               <Trophy size={16} />
               <span className="leaderboard-nav-text">Classement</span>
             </button>
+            {section.type === 'anime' && (
+              <button className="leaderboard-nav-btn" onClick={() => navigate('/anime/playlist')} title="Playlist">
+                <ListMusic size={16} />
+                <span className="leaderboard-nav-text">Playlist</span>
+              </button>
+            )}
             {user && (
               <button className="leaderboard-nav-btn" onClick={() => navigate(`${section.prefix}/profile`)} title="Mon profil">
                 <UserCircle size={16} />

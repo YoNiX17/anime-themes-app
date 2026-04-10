@@ -30,11 +30,11 @@ function App() {
           <Route element={<SectionLayout config={ANIME_CONFIG} />}>
             <Route path="/anime" element={<Home />} />
             <Route path="/anime/search" element={<SearchResults />} />
-            <Route path="/anime/:name" element={<AnimeDetail />} />
-            <Route path="/anime/party/:id" element={<PartyRoom />} />
             <Route path="/anime/playlist" element={<Playlist />} />
+            <Route path="/anime/party/:id" element={<PartyRoom />} />
             <Route path="/anime/leaderboard" element={<Leaderboard />} />
             <Route path="/anime/profile" element={<Profile />} />
+            <Route path="/anime/:name" element={<AnimeDetail />} />
           </Route>
 
           {/* Films section */}
