@@ -9,7 +9,7 @@ import { ref, set } from 'firebase/database';
 import { db } from '../services/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../components/Toast';
-import { parseText, resolveAll, type ResolvedTheme, type ParsedLine } from '../utils/playlistParser';
+import { parseText, resolveAll, type ResolvedTheme } from '../utils/playlistParser';
 import { refreshThemeRatingMeta } from '../utils/ratingMeta';
 import './Playlist.css';
 

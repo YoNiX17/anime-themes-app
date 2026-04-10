@@ -195,7 +195,7 @@ export async function resolveAll(
 
   for (let i = 0; i < lines.length; i += BATCH_SIZE) {
     const batch = lines.slice(i, i + BATCH_SIZE);
-    const batchResults = await Promise.all(
+    await Promise.all(
       batch.map((line, j) =>
         resolveLine(line).then(r => {
           const idx = i + j;
