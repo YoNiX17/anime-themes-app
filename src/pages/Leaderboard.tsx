@@ -1,9 +1,10 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { ref, onValue } from 'firebase/database';
-import { Trophy, BookOpen, Palette, Music, Timer, BarChart3, Loader2, ArrowLeft, Users as UsersIcon, Play, Layers } from 'lucide-react';
+import { Trophy, BookOpen, Palette, Music, Timer, BarChart3, Loader2, ArrowLeft, Users as UsersIcon, Play, Layers, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../services/firebase';
 import { getAnimeName } from '../utils/animeGrouping';
+import { fetchThemeById, type ThemeDetail } from '../services/api';
 import './Leaderboard.css';
 
 type ViewMode = 'anime' | 'themes';
@@ -45,6 +46,7 @@ interface ThemeRating {
   animeName: string;
   themeType: string;
   themeSlug: string;
+  coverImage?: string;
   avgMusic: number;
   avgAnimation: number;
   avgOverall: number;
@@ -73,6 +75,31 @@ export const Leaderboard: React.FC = () => {
   const [animeTab, setAnimeTab] = useState<AnimeTab>('overall');
   const [themeTab, setThemeTab] = useState<ThemeTab>('overall');
   const [animeViewMode, setAnimeViewMode] = useState<AnimeViewMode>('anime');
+  const [playingTheme, setPlayingTheme] = useState<ThemeDetail | null>(null);
+  const [loadingThemeId, setLoadingThemeId] = useState<string | null>(null);
+
+  const handleThemeClick = useCallback(async (themeId: string) => {
+    setLoadingThemeId(themeId);
+    const detail = await fetchThemeById(themeId);
+    setLoadingThemeId(null);
+    if (detail?.videoLink) {
+      setPlayingTheme(detail);
+      document.body.style.overflow = 'hidden';
+    }
+  }, []);
+
+  const handleClosePlayer = useCallback(() => {
+    setPlayingTheme(null);
+    document.body.style.overflow = '';
+  }, []);
+
+  // Close on Escape
+  useEffect(() => {
+    if (!playingTheme) return;
+    const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') handleClosePlayer(); };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [playingTheme, handleClosePlayer]);
 
   // Fetch anime ratings
   useEffect(() => {
@@ -156,6 +183,7 @@ export const Leaderboard: React.FC = () => {
           animeName: meta?.animeName || `Theme #${themeId}`,
           themeType: meta?.themeType || 'OP',
           themeSlug: meta?.themeSlug || '',
+          coverImage: meta?.coverImage || undefined,
           avgMusic: totalMusic / count,
           avgAnimation: totalAnimation / count,
           avgOverall: (totalMusic + totalAnimation) / (2 * count),
@@ -519,9 +547,10 @@ export const Leaderboard: React.FC = () => {
                     if (!r) return null;
                     const score = getThemeScore(r);
                     return (
-                      <div key={r.themeId} className={`podium-card glass-panel podium-${podiumIdx + 1}`}>
+                      <div key={r.themeId} className={`podium-card glass-panel podium-${podiumIdx + 1} podium-clickable`} onClick={() => handleThemeClick(r.themeId)}>
                         <span className="podium-medal">{getMedalEmoji(podiumIdx)}</span>
                         <span className="podium-rank">#{podiumIdx + 1}</span>
+                        {r.coverImage && <img src={r.coverImage} alt="" className="podium-cover" />}
                         <div className="podium-theme-type">{r.themeType}</div>
                         <h4 className="podium-anime-name">{r.animeName}</h4>
                         <div className={`podium-score ${getScoreColor(score)}`}>{score.toFixed(0)}</div>
@@ -531,6 +560,7 @@ export const Leaderboard: React.FC = () => {
                           <span className="podium-detail" title="Animation"><Palette size={10} /> {r.avgAnimation.toFixed(0)}</span>
                         </div>
                         <span className="podium-votes">{r.count} vote{r.count > 1 ? 's' : ''}</span>
+                        {loadingThemeId === r.themeId && <Loader2 size={16} className="lb-spinner podium-loader" />}
                       </div>
                     );
                   })}
@@ -547,11 +577,12 @@ export const Leaderboard: React.FC = () => {
                   <span className="lb-col-votes">Votes</span>
                 </div>
                 {sortedThemes.map((r, i) => (
-                  <div key={r.themeId} className={`lb-table-row lb-theme-grid ${i < 3 ? 'top-three' : ''}`} style={{ animationDelay: `${i * 0.03}s` }}>
+                  <div key={r.themeId} className={`lb-table-row lb-theme-grid lb-theme-row ${i < 3 ? 'top-three' : ''}`} style={{ animationDelay: `${i * 0.03}s` }} onClick={() => handleThemeClick(r.themeId)}>
                     <span className="lb-col-rank">{getMedalEmoji(i) || (i + 1)}</span>
                     <div className="lb-col-name">
                       <span className="lb-theme-badge">{r.themeType}</span>
                       <span className="lb-anime-name">{r.animeName}</span>
+                      {loadingThemeId === r.themeId && <Loader2 size={14} className="lb-spinner" />}
                     </div>
                     <span className={`lb-col-cat ${getScoreColor(r.avgMusic)}`}>{r.avgMusic.toFixed(0)}</span>
                     <span className={`lb-col-cat ${getScoreColor(r.avgAnimation)}`}>{r.avgAnimation.toFixed(0)}</span>
@@ -562,6 +593,34 @@ export const Leaderboard: React.FC = () => {
               </div>
             </div>
           )
+        )}
+
+        {/* ═══ Theme Video Player Modal ═══ */}
+        {playingTheme && (
+          <div className="lb-video-overlay" onClick={handleClosePlayer}>
+            <div className="lb-video-modal glass-panel" onClick={e => e.stopPropagation()}>
+              <button className="lb-video-close" onClick={handleClosePlayer}><X size={18} /></button>
+              <div className="lb-video-info">
+                <span className="lb-video-type">{playingTheme.type}{playingTheme.sequence || ''}</span>
+                <h3 className="lb-video-anime">{playingTheme.animeName}</h3>
+                {playingTheme.songTitle && (
+                  <p className="lb-video-song">
+                    🎵 {playingTheme.songTitle}
+                    {playingTheme.artistName && <span className="lb-video-artist"> — {playingTheme.artistName}</span>}
+                  </p>
+                )}
+              </div>
+              <video
+                key={playingTheme.videoLink!}
+                controls
+                autoPlay
+                className="lb-video-player"
+                poster={playingTheme.coverImage || undefined}
+              >
+                <source src={playingTheme.videoLink!} type="video/webm" />
+              </video>
+            </div>
+          </div>
         )}
       </main>
     </div>

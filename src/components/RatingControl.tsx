@@ -200,6 +200,7 @@ export const RatingControl: React.FC<RatingControlProps> = (props) => {
         const metaFields: Record<string, unknown> = { animeName: animeName || '', animeId };
         metaFields.themeType = themeType;
         metaFields.themeSlug = themeSlug;
+        if (coverImage) metaFields.coverImage = coverImage;
         if (franchise) metaFields.franchise = franchise;
         await refreshThemeRatingMeta(itemId, metaFields);
       } else if (mode === 'movie') {

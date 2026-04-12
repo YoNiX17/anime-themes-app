@@ -497,6 +497,56 @@ const resolveAbbreviation = (query: string): string | null => {
 };
 
 /**
+ * Fetch a single theme by ID — includes video, song title, artists, anime images
+ */
+export interface ThemeDetail {
+  id: number;
+  type: string;
+  sequence: number;
+  slug: string;
+  videoLink: string | null;
+  songTitle: string | null;
+  artistName: string | null;
+  animeName: string | null;
+  coverImage: string | null;
+}
+
+export const fetchThemeById = async (themeId: number | string): Promise<ThemeDetail | null> => {
+  try {
+    const res = await fetch(
+      `${BASE_URL}/animetheme/${themeId}?include=animethemeentries.videos,song.artists,anime.images`
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    const t = data.animetheme;
+    if (!t) return null;
+
+    const entry = t.animethemeentries?.[0];
+    const video = entry?.videos?.[0];
+    const song = t.song;
+    const artist = song?.artists?.[0];
+    const anime = t.anime;
+    const cover = anime?.images?.find((i: any) => i.facet === 'Large Cover')?.link
+      || anime?.images?.find((i: any) => i.facet === 'Small Cover')?.link
+      || null;
+
+    return {
+      id: t.id,
+      type: t.type,
+      sequence: t.sequence,
+      slug: t.slug,
+      videoLink: video?.link || null,
+      songTitle: song?.title || null,
+      artistName: artist?.name || null,
+      animeName: anime?.name || null,
+      coverImage: cover,
+    };
+  } catch {
+    return null;
+  }
+};
+
+/**
  * Fetch anime from this season (latest releases with themes)
  */
 export const fetchThisSeason = async (): Promise<Anime[]> => {

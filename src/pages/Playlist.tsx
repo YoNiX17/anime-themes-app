@@ -270,11 +270,14 @@ chainsaw man ending 1`;
         animation: myScores.animation,
       });
 
+      const coverImage = current.anime.images?.find((i: any) => i.facet === 'Large Cover')?.link
+        || current.anime.images?.find((i: any) => i.facet === 'Small Cover')?.link;
       await refreshThemeRatingMeta(themeId, {
         animeName: current.anime.name,
         animeId: current.anime.id,
         themeType: current.theme.type,
         themeSlug,
+        ...(coverImage ? { coverImage } : {}),
       });
 
       const avg = Math.round((myScores.music + myScores.animation) / 2);
