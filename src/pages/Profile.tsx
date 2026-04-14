@@ -28,6 +28,7 @@ interface UserAnimeRating {
   timestamp: number;
   coverImage?: string;
   franchise?: string;
+  rated: boolean;
 }
 
 interface UserThemeRating {
@@ -128,6 +129,7 @@ export const Profile: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<{ mode: 'anime' | 'theme'; item: UserAnimeRating | UserThemeRating } | null>(null);
+  const [rateGlobalTarget, setRateGlobalTarget] = useState<AnimeGroup | null>(null);
   const [viewMode, setViewMode] = useState<'anime' | 'themes' | 'stats'>('anime');
   const [groupByAnime, setGroupByAnime] = useState(true);
   const [themeFilter, setThemeFilter] = useState<'all' | 'OP' | 'ED'>('all');
@@ -158,6 +160,7 @@ export const Profile: React.FC = () => {
           timestamp: d.timestamp || 0,
           coverImage: d.coverImage || undefined,
           franchise: d.franchise || undefined,
+          rated: d.rated !== false,
         }));
         arr.sort((a, b) => b.timestamp - a.timestamp);
         setAnimeRatings(arr);
@@ -269,7 +272,7 @@ export const Profile: React.FC = () => {
 
     // Update user's personal copy
     const existing = (await get(ref(db, `users/${user.uid}/${dbKey}/${item.id}`))).val() || {};
-    await set(ref(db, `users/${user.uid}/${dbKey}/${item.id}`), { ...existing, ...scores, timestamp: Date.now() });
+    await set(ref(db, `users/${user.uid}/${dbKey}/${item.id}`), { ...existing, ...scores, timestamp: Date.now(), ...(mode === 'anime' ? { rated: true } : {}) });
     // Update global
     await set(ref(db, `${globalKey}/${item.id}/users/${user.uid}`), scores);
     // Refresh aggregated meta
@@ -280,6 +283,22 @@ export const Profile: React.FC = () => {
     }
     showToast("Note mise à jour !", "success");
     setEditingItem(null);
+  };
+
+  // ── Rate globally (apply same scores to all seasons of a franchise) ──
+  const handleSaveGlobal = async (scores: Record<string, number>) => {
+    if (!user || !rateGlobalTarget) return;
+    const promises: Promise<void>[] = [];
+    for (const entry of rateGlobalTarget.entries) {
+      const existing = (await get(ref(db, `users/${user.uid}/ratings/${entry.id}`))).val() || {};
+      const updated = { ...existing, ...scores, timestamp: Date.now(), rated: true };
+      promises.push(set(ref(db, `users/${user.uid}/ratings/${entry.id}`), updated));
+      promises.push(set(ref(db, `ratings/${entry.id}/users/${user.uid}`), scores));
+      promises.push(refreshAnimeRatingMeta(entry.id));
+    }
+    await Promise.all(promises);
+    showToast(`${rateGlobalTarget.anime} noté globalement !`, "success");
+    setRateGlobalTarget(null);
   };
 
   // ── Regroupement par anime ──
@@ -293,17 +312,23 @@ export const Profile: React.FC = () => {
     });
 
     return Array.from(map.entries()).map(([anime, entries]) => {
-      const n = entries.length;
-      const avgPlot = entries.reduce((s, e) => s + e.plot, 0) / n;
-      const avgCharacters = entries.reduce((s, e) => s + e.characters, 0) / n;
-      const avgAnimation = entries.reduce((s, e) => s + e.animation, 0) / n;
-      const avgOst = entries.reduce((s, e) => s + e.ost, 0) / n;
-      const avgPacing = entries.reduce((s, e) => s + e.pacing, 0) / n;
+      const rated = entries.filter(e => e.rated);
+      const n = rated.length || 1;
+      const avgPlot = rated.reduce((s, e) => s + e.plot, 0) / n;
+      const avgCharacters = rated.reduce((s, e) => s + e.characters, 0) / n;
+      const avgAnimation = rated.reduce((s, e) => s + e.animation, 0) / n;
+      const avgOst = rated.reduce((s, e) => s + e.ost, 0) / n;
+      const avgPacing = rated.reduce((s, e) => s + e.pacing, 0) / n;
+      const hasRated = rated.length > 0;
       return {
         anime,
         entries,
-        avgPlot, avgCharacters, avgAnimation, avgOst, avgPacing,
-        avgOverall: (avgPlot + avgCharacters + avgAnimation + avgOst + avgPacing) / 5,
+        avgPlot: hasRated ? avgPlot : 0,
+        avgCharacters: hasRated ? avgCharacters : 0,
+        avgAnimation: hasRated ? avgAnimation : 0,
+        avgOst: hasRated ? avgOst : 0,
+        avgPacing: hasRated ? avgPacing : 0,
+        avgOverall: hasRated ? (avgPlot + avgCharacters + avgAnimation + avgOst + avgPacing) / 5 : -1,
         latestCover: entries.find(e => e.coverImage)?.coverImage,
       };
     }).sort((a, b) => b.avgOverall - a.avgOverall);
@@ -420,12 +445,14 @@ export const Profile: React.FC = () => {
             {animeCount === 0 ? (
               <div className="profile-empty glass-panel">
                 <BookOpen size={40} style={{ color: 'var(--text-muted)' }} />
-                <p>Tu n'as encore noté aucune saison.</p>
+                <p>Tu n'as encore ajouté aucun anime.</p>
               </div>
             ) : groupByAnime && animeGroups ? (
               /* Vue groupée par anime */
               <div className="franchise-list">
-                {animeGroups.map(f => (
+                {animeGroups.map(f => {
+                  const hasAnyRated = f.entries.some(e => e.rated);
+                  return (
                   <div key={f.anime} className="franchise-card glass-panel">
                     <div className="franchise-header">
                       {f.latestCover && <img src={f.latestCover} alt="" className="franchise-cover" />}
@@ -433,10 +460,15 @@ export const Profile: React.FC = () => {
                         <h4 className="franchise-name">{f.anime}</h4>
                         <span className="franchise-count">{f.entries.length} saison{f.entries.length > 1 ? 's' : ''}</span>
                       </div>
-                      <div className={`franchise-score ${getScoreColor(f.avgOverall)}`}>
-                        {f.avgOverall.toFixed(0)}<span className="franchise-max">/100</span>
-                      </div>
+                      {hasAnyRated ? (
+                        <div className={`franchise-score ${getScoreColor(f.avgOverall)}`}>
+                          {f.avgOverall.toFixed(0)}<span className="franchise-max">/100</span>
+                        </div>
+                      ) : (
+                        <span className="franchise-unrated-badge">Non noté</span>
+                      )}
                     </div>
+                    {hasAnyRated && (
                     <div className="franchise-cats">
                       <span style={{ color: '#8b5cf6' }}><BookOpen size={11} /> {f.avgPlot.toFixed(0)}</span>
                       <span style={{ color: '#06d6a0' }}><UsersIcon size={11} /> {f.avgCharacters.toFixed(0)}</span>
@@ -444,32 +476,57 @@ export const Profile: React.FC = () => {
                       <span style={{ color: '#fbbf24' }}><Music size={11} /> {f.avgOst.toFixed(0)}</span>
                       <span style={{ color: '#06b6d4' }}><Timer size={11} /> {f.avgPacing.toFixed(0)}</span>
                     </div>
+                    )}
+                    {/* Rate options */}
+                    {!hasAnyRated && (
+                      <div className="franchise-rate-options">
+                        <button className="franchise-rate-global-btn" onClick={() => setRateGlobalTarget(f)}>
+                          <Edit3 size={13} /> Noter globalement
+                        </button>
+                        <button className="franchise-rate-season-btn" onClick={() => setEditingItem({ mode: 'anime', item: f.entries[0] })}>
+                          <Edit3 size={13} /> Par saison
+                        </button>
+                      </div>
+                    )}
                     <div className="franchise-entries">
                       {f.entries.map(r => {
-                        const overall = Math.round((r.plot + r.characters + r.animation + r.ost + r.pacing) / 5);
+                        const overall = r.rated ? Math.round((r.plot + r.characters + r.animation + r.ost + r.pacing) / 5) : -1;
                         return (
                           <div key={r.id} className="franchise-entry">
                             <span className="entry-name">{r.animeName}</span>
-                            <span className={`entry-score ${getScoreColor(overall)}`}>{overall}</span>
+                            {r.rated ? (
+                              <span className={`entry-score ${getScoreColor(overall)}`}>{overall}</span>
+                            ) : (
+                              <span className="entry-unrated">—</span>
+                            )}
                             <button className="entry-edit-btn" onClick={() => setEditingItem({ mode: 'anime', item: r })}><Edit3 size={13} /></button>
                             <button className="entry-delete-btn" onClick={() => handleDeleteAnimeRating(r.id)}><Trash2 size={13} /></button>
                           </div>
                         );
                       })}
                     </div>
+                    {hasAnyRated && f.entries.some(e => !e.rated) && (
+                      <div className="franchise-rate-options" style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '0.5rem' }}>
+                        <button className="franchise-rate-global-btn" onClick={() => setRateGlobalTarget(f)}>
+                          <Edit3 size={13} /> Appliquer une note globale
+                        </button>
+                      </div>
+                    )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               /* Flat list */
               <div className="ratings-list">
                 {animeRatings.map(r => {
-                  const overall = Math.round((r.plot + r.characters + r.animation + r.ost + r.pacing) / 5);
+                  const overall = r.rated ? Math.round((r.plot + r.characters + r.animation + r.ost + r.pacing) / 5) : -1;
                   return (
                     <div key={r.id} className="rating-row glass-panel">
                       {r.coverImage && <img src={r.coverImage} alt="" className="rating-row-cover" />}
                       <div className="rating-row-info">
                         <span className="rating-row-name">{r.animeName}</span>
+                        {r.rated ? (
                         <div className="rating-row-cats">
                           <span style={{ color: '#8b5cf6' }}>{r.plot}</span>
                           <span style={{ color: '#06d6a0' }}>{r.characters}</span>
@@ -477,8 +534,15 @@ export const Profile: React.FC = () => {
                           <span style={{ color: '#fbbf24' }}>{r.ost}</span>
                           <span style={{ color: '#06b6d4' }}>{r.pacing}</span>
                         </div>
+                        ) : (
+                          <span className="entry-unrated" style={{ fontSize: '0.75rem' }}>Non noté</span>
+                        )}
                       </div>
-                      <div className={`rating-row-overall ${getScoreColor(overall)}`}>{overall}</div>
+                      {r.rated ? (
+                        <div className={`rating-row-overall ${getScoreColor(overall)}`}>{overall}</div>
+                      ) : (
+                        <div className="rating-row-overall" style={{ color: 'var(--text-muted)' }}>—</div>
+                      )}
                       <div className="rating-row-actions">
                         <button onClick={() => setEditingItem({ mode: 'anime', item: r })}><Edit3 size={14} /></button>
                         <button onClick={() => handleDeleteAnimeRating(r.id)}><Trash2 size={14} /></button>
@@ -717,6 +781,15 @@ export const Profile: React.FC = () => {
           item={editingItem.item}
           onSave={handleSaveEdit}
           onClose={() => setEditingItem(null)}
+        />
+      )}
+
+      {rateGlobalTarget && (
+        <EditModal
+          mode="anime"
+          item={{ ...rateGlobalTarget.entries[0], plot: 50, characters: 50, animation: 50, ost: 50, pacing: 50 } as UserAnimeRating}
+          onSave={handleSaveGlobal}
+          onClose={() => setRateGlobalTarget(null)}
         />
       )}
     </div>

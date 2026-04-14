@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Sparkles, Search, ArrowLeft, ChevronDown, ChevronUp, Star } from 'lucide-react';
+import { Sparkles, Search, ArrowLeft, ChevronDown, ChevronUp, Plus } from 'lucide-react';
 import { AnimeCard } from '../components/AnimeCard';
 import { Loader } from '../components/Loader';
 import { searchAnime } from '../services/api';
@@ -110,11 +110,11 @@ export const SearchResults: React.FC = () => {
                       <div className="franchise-actions">
                         <button
                           className="franchise-rate-btn"
-                          title="Noter"
+                          title="Ajouter au profil"
                           onClick={(e) => { e.stopPropagation(); setRatingTarget({ franchise: group.franchise, seasons: group.seasons }); }}
                         >
-                          <Star size={16} />
-                          <span>Noter</span>
+                          <Plus size={16} />
+                          <span>Ajouter</span>
                         </button>
                         <div className="franchise-expand-icon">
                           {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
