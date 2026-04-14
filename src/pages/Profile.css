@@ -316,14 +316,27 @@
   align-items: center;
   gap: 12px;
   margin-bottom: 8px;
+  cursor: pointer;
+  user-select: none;
+  transition: opacity 0.15s;
+}
+.franchise-header:hover {
+  opacity: 0.85;
 }
 
 .franchise-cover {
-  width: 48px;
-  height: 68px;
+  width: 80px;
+  height: 112px;
   object-fit: cover;
-  border-radius: 6px;
+  border-radius: 8px;
   flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.franchise-chevron {
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: transform 0.2s;
 }
 
 .franchise-info {
@@ -332,8 +345,8 @@
 }
 .franchise-name {
   margin: 0;
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: 1.1rem;
+  font-weight: 700;
   color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;

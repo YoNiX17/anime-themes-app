@@ -317,11 +317,12 @@
 }
 
 .podium-cover {
-  width: 50px;
-  height: 70px;
+  width: 80px;
+  height: 112px;
   object-fit: cover;
-  border-radius: 6px;
+  border-radius: 8px;
   margin-top: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .podium-theme-type {
@@ -443,11 +444,86 @@
 }
 
 .lb-row-cover {
-  width: 32px;
-  height: 44px;
+  width: 48px;
+  height: 68px;
+  object-fit: cover;
+  border-radius: 6px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+/* ═══ Expandable rows ═══ */
+.lb-group-wrapper {
+  min-width: 500px;
+}
+
+.lb-row-expandable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.lb-row-expandable:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.lb-row-chevron {
+  color: var(--text-muted);
+  flex-shrink: 0;
+  margin-left: auto;
+  transition: transform 0.2s;
+}
+
+.lb-season-expansion {
+  padding: 0.4rem 1rem 0.6rem 90px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  animation: rowFadeIn 0.2s ease-out;
+}
+
+.lb-season-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  transition: background 0.15s;
+}
+
+.lb-season-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.lb-season-cover {
+  width: 28px;
+  height: 40px;
   object-fit: cover;
   border-radius: 4px;
   flex-shrink: 0;
+}
+
+.lb-season-name {
+  flex: 1;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lb-season-score {
+  font-weight: 700;
+  font-size: 0.82rem;
+  min-width: 28px;
+  text-align: right;
+}
+
+.lb-season-votes {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  min-width: 60px;
+  text-align: right;
 }
 
 .lb-theme-badge {

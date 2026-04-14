@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { ref, onValue } from 'firebase/database';
-import { Trophy, BookOpen, Palette, Music, Timer, BarChart3, Loader2, ArrowLeft, Users as UsersIcon, Play, Layers, X } from 'lucide-react';
+import { Trophy, BookOpen, Palette, Music, Timer, BarChart3, Loader2, ArrowLeft, Users as UsersIcon, Play, Layers, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../services/firebase';
 import { getAnimeName } from '../utils/animeGrouping';
@@ -65,6 +65,7 @@ interface AnimeGroupRating {
   avgOverall: number;
   totalCount: number;
   seasonCount: number;
+  seasons: AnimeRating[];
 }
 
 export const Leaderboard: React.FC = () => {
@@ -78,6 +79,7 @@ export const Leaderboard: React.FC = () => {
   const [animeViewMode, setAnimeViewMode] = useState<AnimeViewMode>('anime');
   const [playingTheme, setPlayingTheme] = useState<ThemeDetail | null>(null);
   const [loadingThemeId, setLoadingThemeId] = useState<string | null>(null);
+  const [expandedAnime, setExpandedAnime] = useState<Set<string>>(new Set());
 
   const handleThemeClick = useCallback(async (themeId: string) => {
     setLoadingThemeId(themeId);
@@ -301,6 +303,7 @@ export const Leaderboard: React.FC = () => {
         avgOverall: (avgPlot + avgCharacters + avgAnimation + avgOst + avgPacing) / 5,
         totalCount: totalWeight,
         seasonCount: entries.length,
+        seasons: entries,
       };
     });
   };
@@ -331,6 +334,15 @@ export const Leaderboard: React.FC = () => {
   const sortedAnime = useMemo(getSortedAnime, [animeRatings, animeTab]);
   const sortedGroupedAnime = useMemo(getSortedGroupedAnime, [animeRatings, animeTab]);
   const sortedThemes = useMemo(getSortedThemes, [enrichedThemeRatings, themeTab]);
+
+  const toggleAnime = (anime: string) => {
+    setExpandedAnime(prev => {
+      const next = new Set(prev);
+      if (next.has(anime)) next.delete(anime);
+      else next.add(anime);
+      return next;
+    });
+  };
 
   return (
     <div className="leaderboard-container">
@@ -464,8 +476,10 @@ export const Leaderboard: React.FC = () => {
                 </div>
                 {sortedGroupedAnime.slice(sortedGroupedAnime.length >= 3 ? 3 : 0).map((r, i) => {
                   const rank = sortedGroupedAnime.length >= 3 ? i + 4 : i + 1;
+                  const isExpanded = expandedAnime.has(r.anime);
                   return (
-                  <div key={r.anime} className="lb-table-row lb-anime-grid" style={{ animationDelay: `${i * 0.03}s` }}>
+                  <div key={r.anime} className="lb-group-wrapper">
+                  <div className={`lb-table-row lb-anime-grid ${r.seasonCount > 1 ? 'lb-row-expandable' : ''}`} style={{ animationDelay: `${i * 0.03}s` }} onClick={r.seasonCount > 1 ? () => toggleAnime(r.anime) : undefined}>
                     <span className="lb-col-rank">{rank}</span>
                     <div className="lb-col-name">
                       {r.coverImage && <img src={r.coverImage} alt="" className="lb-row-cover" />}
@@ -473,6 +487,7 @@ export const Leaderboard: React.FC = () => {
                         <span className="lb-anime-name">{r.anime}</span>
                         {r.seasonCount > 1 && <span className="lb-season-count">{r.seasonCount} saisons</span>}
                       </div>
+                      {r.seasonCount > 1 && (isExpanded ? <ChevronUp size={14} className="lb-row-chevron" /> : <ChevronDown size={14} className="lb-row-chevron" />)}
                     </div>
                     <span className={`lb-col-cat ${getScoreColor(r.avgPlot)}`}>{r.avgPlot.toFixed(0)}</span>
                     <span className={`lb-col-cat ${getScoreColor(r.avgCharacters)}`}>{r.avgCharacters.toFixed(0)}</span>
@@ -481,6 +496,22 @@ export const Leaderboard: React.FC = () => {
                     <span className={`lb-col-cat ${getScoreColor(r.avgPacing)}`}>{r.avgPacing.toFixed(0)}</span>
                     <span className={`lb-col-overall lb-overall-score ${getScoreColor(r.avgOverall)}`}>{r.avgOverall.toFixed(0)}</span>
                     <span className="lb-col-votes">{r.totalCount}</span>
+                  </div>
+                  {isExpanded && r.seasonCount > 1 && (
+                    <div className="lb-season-expansion">
+                      {r.seasons.map(s => {
+                        const sScore = getAnimeScore(s);
+                        return (
+                        <div key={s.animeId} className="lb-season-row">
+                          {s.coverImage && <img src={s.coverImage} alt="" className="lb-season-cover" />}
+                          <span className="lb-season-name">{s.animeName}</span>
+                          <span className={`lb-season-score ${getScoreColor(sScore)}`}>{sScore.toFixed(0)}</span>
+                          <span className="lb-season-votes">{s.count} vote{s.count > 1 ? 's' : ''}</span>
+                        </div>
+                        );
+                      })}
+                    </div>
+                  )}
                   </div>
                   );
                 })}

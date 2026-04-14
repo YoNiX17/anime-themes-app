@@ -3,7 +3,7 @@ import { ref, onValue, set, remove, get } from 'firebase/database';
 import {
   User as UserIcon, Camera, BookOpen, Palette, Music, Timer, Trash2,
   Users as UsersIcon, Edit3, Save, ArrowLeft, Play, Loader2, X, Share2,
-  BarChart3, TrendingUp, Film, Tv, Upload
+  BarChart3, TrendingUp, Film, Tv, Upload, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../services/firebase';
@@ -135,6 +135,7 @@ export const Profile: React.FC = () => {
   const [groupByAnime, setGroupByAnime] = useState(true);
   const [themeFilter, setThemeFilter] = useState<'all' | 'OP' | 'ED'>('all');
   const [showMALImport, setShowMALImport] = useState(false);
+  const [expandedFranchises, setExpandedFranchises] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -344,6 +345,15 @@ export const Profile: React.FC = () => {
     return 'score-low';
   };
 
+  const toggleFranchise = (anime: string) => {
+    setExpandedFranchises(prev => {
+      const next = new Set(prev);
+      if (next.has(anime)) next.delete(anime);
+      else next.add(anime);
+      return next;
+    });
+  };
+
   if (!user) return null;
 
   const displayName = user.displayName || user.email?.split('@')[0] || 'Utilisateur';
@@ -461,7 +471,7 @@ export const Profile: React.FC = () => {
                   const hasAnyRated = f.entries.some(e => e.rated);
                   return (
                   <div key={f.anime} className="franchise-card glass-panel">
-                    <div className="franchise-header">
+                    <div className="franchise-header" onClick={() => toggleFranchise(f.anime)}>
                       {f.latestCover && <img src={f.latestCover} alt="" className="franchise-cover" />}
                       <div className="franchise-info">
                         <h4 className="franchise-name">{f.anime}</h4>
@@ -474,7 +484,10 @@ export const Profile: React.FC = () => {
                       ) : (
                         <span className="franchise-unrated-badge">Non noté</span>
                       )}
+                      {expandedFranchises.has(f.anime) ? <ChevronUp size={18} className="franchise-chevron" /> : <ChevronDown size={18} className="franchise-chevron" />}
                     </div>
+                    {expandedFranchises.has(f.anime) && (
+                    <>
                     {hasAnyRated && (
                     <div className="franchise-cats">
                       <span style={{ color: '#8b5cf6' }}><BookOpen size={11} /> {f.avgPlot.toFixed(0)}</span>
@@ -484,7 +497,6 @@ export const Profile: React.FC = () => {
                       <span style={{ color: '#06b6d4' }}><Timer size={11} /> {f.avgPacing.toFixed(0)}</span>
                     </div>
                     )}
-                    {/* Rate options */}
                     {!hasAnyRated && (
                       <div className="franchise-rate-options">
                         <button className="franchise-rate-global-btn" onClick={() => setRateGlobalTarget(f)}>
@@ -518,6 +530,8 @@ export const Profile: React.FC = () => {
                           <Edit3 size={13} /> Appliquer une note globale
                         </button>
                       </div>
+                    )}
+                    </>
                     )}
                   </div>
                   );
