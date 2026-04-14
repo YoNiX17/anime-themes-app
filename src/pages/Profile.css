@@ -194,6 +194,49 @@
   color: var(--accent);
 }
 
+/* ── Theme filter toggle ── */
+.theme-filter-toggle {
+  display: flex;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  padding: 3px;
+}
+
+.theme-filter-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.theme-filter-btn.active {
+  background: rgba(124, 58, 237, 0.2);
+  color: var(--accent-primary-light, #a78bfa);
+  box-shadow: 0 0 12px rgba(124, 58, 237, 0.2);
+}
+
+.theme-filter-btn:hover:not(.active) {
+  color: var(--text-primary);
+}
+
+/* ── Rating row rank number ── */
+.rating-row-rank {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  min-width: 24px;
+  text-align: center;
+  flex-shrink: 0;
+  font-family: 'Outfit', sans-serif;
+}
+
 /* Empty */
 .profile-empty {
   text-align: center;

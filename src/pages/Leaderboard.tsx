@@ -43,6 +43,7 @@ interface AnimeRating {
 
 interface ThemeRating {
   themeId: string;
+  animeId?: string;
   animeName: string;
   themeType: string;
   themeSlug: string;
@@ -180,6 +181,7 @@ export const Leaderboard: React.FC = () => {
 
         results.push({
           themeId,
+          animeId: meta?.animeId ? String(meta.animeId) : undefined,
           animeName: meta?.animeName || `Theme #${themeId}`,
           themeType: meta?.themeType || 'OP',
           themeSlug: meta?.themeSlug || '',
@@ -235,9 +237,22 @@ export const Leaderboard: React.FC = () => {
     }
   };
 
-  // Sort theme ratings
+  // Enrich theme ratings with cover images from anime ratings when missing
+  const enrichedThemeRatings = useMemo(() => {
+    const coverMap = new Map<string, string>();
+    animeRatings.forEach(r => {
+      if (r.coverImage) coverMap.set(r.animeId, r.coverImage);
+    });
+    return themeRatings.map(t => {
+      if (t.coverImage) return t;
+      const cover = t.animeId ? coverMap.get(t.animeId) : undefined;
+      return cover ? { ...t, coverImage: cover } : t;
+    });
+  }, [themeRatings, animeRatings]);
+
+  // Sort theme ratings (use enriched)
   const getSortedThemes = (): ThemeRating[] => {
-    const sorted = [...themeRatings];
+    const sorted = [...enrichedThemeRatings];
     switch (themeTab) {
       case 'music': return sorted.sort((a, b) => b.avgMusic - a.avgMusic);
       case 'animation': return sorted.sort((a, b) => b.avgAnimation - a.avgAnimation);
@@ -315,7 +330,7 @@ export const Leaderboard: React.FC = () => {
 
   const sortedAnime = useMemo(getSortedAnime, [animeRatings, animeTab]);
   const sortedGroupedAnime = useMemo(getSortedGroupedAnime, [animeRatings, animeTab]);
-  const sortedThemes = useMemo(getSortedThemes, [themeRatings, themeTab]);
+  const sortedThemes = useMemo(getSortedThemes, [enrichedThemeRatings, themeTab]);
 
   return (
     <div className="leaderboard-container">
@@ -447,9 +462,11 @@ export const Leaderboard: React.FC = () => {
                   <span className="lb-col-overall">Global</span>
                   <span className="lb-col-votes">Votes</span>
                 </div>
-                {sortedGroupedAnime.map((r, i) => (
-                  <div key={r.anime} className={`lb-table-row lb-anime-grid ${i < 3 ? 'top-three' : ''}`} style={{ animationDelay: `${i * 0.03}s` }}>
-                    <span className="lb-col-rank">{getMedalEmoji(i) || (i + 1)}</span>
+                {sortedGroupedAnime.slice(sortedGroupedAnime.length >= 3 ? 3 : 0).map((r, i) => {
+                  const rank = sortedGroupedAnime.length >= 3 ? i + 4 : i + 1;
+                  return (
+                  <div key={r.anime} className="lb-table-row lb-anime-grid" style={{ animationDelay: `${i * 0.03}s` }}>
+                    <span className="lb-col-rank">{rank}</span>
                     <div className="lb-col-name">
                       {r.coverImage && <img src={r.coverImage} alt="" className="lb-row-cover" />}
                       <div className="lb-name-group">
@@ -465,7 +482,8 @@ export const Leaderboard: React.FC = () => {
                     <span className={`lb-col-overall lb-overall-score ${getScoreColor(r.avgOverall)}`}>{r.avgOverall.toFixed(0)}</span>
                     <span className="lb-col-votes">{r.totalCount}</span>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ) : (
@@ -511,9 +529,11 @@ export const Leaderboard: React.FC = () => {
                   <span className="lb-col-overall">Global</span>
                   <span className="lb-col-votes">Votes</span>
                 </div>
-                {sortedAnime.map((r, i) => (
-                  <div key={r.animeId} className={`lb-table-row lb-anime-grid ${i < 3 ? 'top-three' : ''}`} style={{ animationDelay: `${i * 0.03}s` }}>
-                    <span className="lb-col-rank">{getMedalEmoji(i) || (i + 1)}</span>
+                {sortedAnime.slice(sortedAnime.length >= 3 ? 3 : 0).map((r, i) => {
+                  const rank = sortedAnime.length >= 3 ? i + 4 : i + 1;
+                  return (
+                  <div key={r.animeId} className="lb-table-row lb-anime-grid" style={{ animationDelay: `${i * 0.03}s` }}>
+                    <span className="lb-col-rank">{rank}</span>
                     <div className="lb-col-name">
                       {r.coverImage && <img src={r.coverImage} alt="" className="lb-row-cover" />}
                       <span className="lb-anime-name">{r.animeName}</span>
@@ -526,7 +546,8 @@ export const Leaderboard: React.FC = () => {
                     <span className={`lb-col-overall lb-overall-score ${getScoreColor(r.avgOverall)}`}>{r.avgOverall.toFixed(0)}</span>
                     <span className="lb-col-votes">{r.count}</span>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )
@@ -576,9 +597,11 @@ export const Leaderboard: React.FC = () => {
                   <span className="lb-col-overall">Global</span>
                   <span className="lb-col-votes">Votes</span>
                 </div>
-                {sortedThemes.map((r, i) => (
-                  <div key={r.themeId} className={`lb-table-row lb-theme-grid lb-theme-row ${i < 3 ? 'top-three' : ''}`} style={{ animationDelay: `${i * 0.03}s` }} onClick={() => handleThemeClick(r.themeId)}>
-                    <span className="lb-col-rank">{getMedalEmoji(i) || (i + 1)}</span>
+                {sortedThemes.slice(sortedThemes.length >= 3 ? 3 : 0).map((r, i) => {
+                  const rank = sortedThemes.length >= 3 ? i + 4 : i + 1;
+                  return (
+                  <div key={r.themeId} className="lb-table-row lb-theme-grid lb-theme-row" style={{ animationDelay: `${i * 0.03}s` }} onClick={() => handleThemeClick(r.themeId)}>
+                    <span className="lb-col-rank">{rank}</span>
                     <div className="lb-col-name">
                       <span className="lb-theme-badge">{r.themeType}</span>
                       <span className="lb-anime-name">{r.animeName}</span>
@@ -589,7 +612,8 @@ export const Leaderboard: React.FC = () => {
                     <span className={`lb-col-overall lb-overall-score ${getScoreColor(r.avgOverall)}`}>{r.avgOverall.toFixed(0)}</span>
                     <span className="lb-col-votes">{r.count}</span>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )

@@ -127,6 +127,7 @@ export const Profile: React.FC = () => {
   const [editingItem, setEditingItem] = useState<{ mode: 'anime' | 'theme'; item: UserAnimeRating | UserThemeRating } | null>(null);
   const [viewMode, setViewMode] = useState<'anime' | 'themes'>('anime');
   const [groupByAnime, setGroupByAnime] = useState(true);
+  const [themeFilter, setThemeFilter] = useState<'all' | 'OP' | 'ED'>('all');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -464,6 +465,11 @@ export const Profile: React.FC = () => {
           <div className="profile-ratings-section">
             <div className="profile-section-header">
               <h3>Mes notes OP/ED ({themeCount})</h3>
+              <div className="theme-filter-toggle">
+                <button className={`theme-filter-btn ${themeFilter === 'all' ? 'active' : ''}`} onClick={() => setThemeFilter('all')}>Tous</button>
+                <button className={`theme-filter-btn ${themeFilter === 'OP' ? 'active' : ''}`} onClick={() => setThemeFilter('OP')}>OP</button>
+                <button className={`theme-filter-btn ${themeFilter === 'ED' ? 'active' : ''}`} onClick={() => setThemeFilter('ED')}>ED</button>
+              </div>
             </div>
 
             {themeCount === 0 ? (
@@ -471,32 +477,51 @@ export const Profile: React.FC = () => {
                 <Play size={40} style={{ color: 'var(--text-muted)' }} />
                 <p>Tu n'as encore noté aucun OP/ED.</p>
               </div>
-            ) : (
-              <div className="ratings-list">
-                {themeRatings.map(r => {
-                  const overall = Math.round((r.music + r.animation) / 2);
-                  return (
-                    <div key={r.id} className="rating-row glass-panel">
-                      <div className="rating-row-info">
-                        <div className="rating-row-name-group">
-                          <span className="rating-row-theme-badge">{r.themeType}</span>
-                          <span className="rating-row-name">{r.animeName}</span>
+            ) : (() => {
+              const filtered = themeFilter === 'all'
+                ? themeRatings
+                : themeRatings.filter(r => r.themeType.startsWith(themeFilter));
+              const sorted = [...filtered].sort((a, b) => {
+                const avgA = (a.music + a.animation) / 2;
+                const avgB = (b.music + b.animation) / 2;
+                return avgB - avgA;
+              });
+              if (sorted.length === 0) {
+                return (
+                  <div className="profile-empty glass-panel">
+                    <Play size={40} style={{ color: 'var(--text-muted)' }} />
+                    <p>Aucun {themeFilter} noté.</p>
+                  </div>
+                );
+              }
+              return (
+                <div className="ratings-list">
+                  {sorted.map((r, i) => {
+                    const overall = Math.round((r.music + r.animation) / 2);
+                    return (
+                      <div key={r.id} className="rating-row glass-panel">
+                        <span className="rating-row-rank">{i + 1}</span>
+                        <div className="rating-row-info">
+                          <div className="rating-row-name-group">
+                            <span className="rating-row-theme-badge">{r.themeType}</span>
+                            <span className="rating-row-name">{r.animeName}</span>
+                          </div>
+                          <div className="rating-row-cats">
+                            <span style={{ color: '#f72585' }}><Music size={11} /> {r.music}</span>
+                            <span style={{ color: '#06b6d4' }}><Palette size={11} /> {r.animation}</span>
+                          </div>
                         </div>
-                        <div className="rating-row-cats">
-                          <span style={{ color: '#f72585' }}><Music size={11} /> {r.music}</span>
-                          <span style={{ color: '#06b6d4' }}><Palette size={11} /> {r.animation}</span>
+                        <div className={`rating-row-overall ${getScoreColor(overall)}`}>{overall}</div>
+                        <div className="rating-row-actions">
+                          <button onClick={() => setEditingItem({ mode: 'theme', item: r })}><Edit3 size={14} /></button>
+                          <button onClick={() => handleDeleteThemeRating(r.id)}><Trash2 size={14} /></button>
                         </div>
                       </div>
-                      <div className={`rating-row-overall ${getScoreColor(overall)}`}>{overall}</div>
-                      <div className="rating-row-actions">
-                        <button onClick={() => setEditingItem({ mode: 'theme', item: r })}><Edit3 size={14} /></button>
-                        <button onClick={() => handleDeleteThemeRating(r.id)}><Trash2 size={14} /></button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </div>
         )}
       </main>
