@@ -3,13 +3,14 @@ import { ref, onValue, set, remove, get } from 'firebase/database';
 import {
   User as UserIcon, Camera, BookOpen, Palette, Music, Timer, Trash2,
   Users as UsersIcon, Edit3, Save, ArrowLeft, Play, Loader2, X, Share2,
-  BarChart3, TrendingUp, Film, Tv
+  BarChart3, TrendingUp, Film, Tv, Upload
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../services/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../components/Toast';
 import { getAnimeName } from '../utils/animeGrouping';
+import { MALImportModal } from '../components/MALImportModal';
 import { refreshAnimeRatingMeta, refreshThemeRatingMeta } from '../utils/ratingMeta';
 import './Profile.css';
 
@@ -133,6 +134,7 @@ export const Profile: React.FC = () => {
   const [viewMode, setViewMode] = useState<'anime' | 'themes' | 'stats'>('anime');
   const [groupByAnime, setGroupByAnime] = useState(true);
   const [themeFilter, setThemeFilter] = useState<'all' | 'OP' | 'ED'>('all');
+  const [showMALImport, setShowMALImport] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -382,17 +384,22 @@ export const Profile: React.FC = () => {
           <h2 className="profile-name">{displayName}</h2>
           <p className="profile-email">{user.email}</p>
 
-          <button
-            className="profile-share-btn"
-            onClick={() => {
-              const url = `${window.location.origin}/profil/${user.uid}`;
-              navigator.clipboard.writeText(url).then(() => {
-                showToast("Lien du profil copié !", "success");
-              });
-            }}
-          >
-            <Share2 size={14} /> Partager mon profil
-          </button>
+          <div className="profile-action-btns">
+            <button
+              className="profile-share-btn"
+              onClick={() => {
+                const url = `${window.location.origin}/profil/${user.uid}`;
+                navigator.clipboard.writeText(url).then(() => {
+                  showToast("Lien du profil copié !", "success");
+                });
+              }}
+            >
+              <Share2 size={14} /> Partager
+            </button>
+            <button className="profile-mal-btn" onClick={() => setShowMALImport(true)}>
+              <Upload size={14} /> Import MAL
+            </button>
+          </div>
 
           <div className="profile-stats">
             <div className="stat-card">
@@ -791,6 +798,10 @@ export const Profile: React.FC = () => {
           onSave={handleSaveGlobal}
           onClose={() => setRateGlobalTarget(null)}
         />
+      )}
+
+      {showMALImport && (
+        <MALImportModal onClose={() => setShowMALImport(false)} />
       )}
     </div>
   );
