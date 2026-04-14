@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
 import type { User } from 'firebase/auth';
-import { auth } from '../services/firebase';
+import { ref, set } from 'firebase/database';
+import { auth, db } from '../services/firebase';
 
 interface AuthContextType {
   user: User | null;
@@ -19,6 +20,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
+      // Sync display name to RTDB for public profiles
+      if (currentUser) {
+        const name = currentUser.displayName || currentUser.email?.split('@')[0] || 'Utilisateur';
+        set(ref(db, `users/${currentUser.uid}/profile/displayName`), name).catch(() => {});
+      }
     });
 
     return () => unsubscribe();

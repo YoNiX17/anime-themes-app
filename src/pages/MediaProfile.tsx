@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { ref, onValue, set, remove, get } from 'firebase/database';
-import { User as UserIcon, Camera, Trash2, Edit3, Save, ArrowLeft, Loader2, X } from 'lucide-react';
+import { User as UserIcon, Camera, Trash2, Edit3, Save, ArrowLeft, Loader2, X, Share2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../services/firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -185,6 +185,15 @@ export const MediaProfile: React.FC = () => {
           <div className="mprof-user-info">
             <h1>{user.displayName || user.email}</h1>
             <p>{ratings.length} {section.label.toLowerCase()} noté{ratings.length > 1 ? 's' : ''}</p>
+            <button
+              className="mprof-share-btn"
+              onClick={() => {
+                const url = `${window.location.origin}/profil/${user.uid}`;
+                navigator.clipboard.writeText(url);
+              }}
+            >
+              <Share2 size={13} /> Partager
+            </button>
           </div>
         </div>
 

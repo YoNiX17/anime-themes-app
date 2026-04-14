@@ -99,14 +99,18 @@
 
     "users": {
       "$userId": {
-        ".read": "auth != null && auth.uid == $userId",
         ".write": "auth != null && auth.uid == $userId",
         "profile": {
+          ".read": true,
           "avatarUrl": {
             ".validate": "newData.isString() && newData.val().length < 300000"
+          },
+          "displayName": {
+            ".validate": "newData.isString() && newData.val().length < 100"
           }
         },
         "ratings": {
+          ".read": true,
           "$animeId": {
             ".validate": "newData.hasChildren(['plot','characters','animation','ost','pacing','animeName','timestamp'])",
             "plot": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" },
@@ -117,6 +121,7 @@
           }
         },
         "themeRatings": {
+          ".read": true,
           "$themeId": {
             ".validate": "newData.hasChildren(['music','animation','animeName','timestamp'])",
             "music": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" },
@@ -124,6 +129,7 @@
           }
         },
         "movieRatings": {
+          ".read": true,
           "$movieId": {
             ".validate": "newData.hasChildren(['scenario','acting','directing','music','mediaTitle','timestamp'])",
             "scenario": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" },
@@ -133,6 +139,7 @@
           }
         },
         "seriesRatings": {
+          ".read": true,
           "$seriesId": {
             ".validate": "newData.hasChildren(['scenario','acting','directing','music','pacing','mediaTitle','timestamp'])",
             "scenario": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" },

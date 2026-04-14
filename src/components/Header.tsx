@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Play, User as UserIcon, LogOut, Trophy, UserCircle, ListMusic } from 'lucide-react';
+import { Search, Play, User as UserIcon, LogOut, Trophy, UserCircle, ListMusic, Layers } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useSection } from '../contexts/SectionContext';
@@ -79,6 +79,12 @@ export const Header: React.FC<HeaderProps> = ({ initialQuery = '' }) => {
               <button className="leaderboard-nav-btn" onClick={() => navigate('/anime/playlist')} title="Playlist">
                 <ListMusic size={16} />
                 <span className="leaderboard-nav-text">Playlist</span>
+              </button>
+            )}
+            {user && (
+              <button className="leaderboard-nav-btn" onClick={() => navigate(`${section.prefix}/tierlist`)} title="Tier List">
+                <Layers size={16} />
+                <span className="leaderboard-nav-text">Tier List</span>
               </button>
             )}
             {user && (

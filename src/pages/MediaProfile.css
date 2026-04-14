@@ -92,6 +92,26 @@
   color: var(--text-secondary);
 }
 
+.mprof-share-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 14px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent-primary-light, #a78bfa);
+  background: rgba(124, 58, 237, 0.12);
+  border: 1px solid rgba(124, 58, 237, 0.25);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 6px;
+}
+.mprof-share-btn:hover {
+  background: rgba(124, 58, 237, 0.22);
+  border-color: rgba(124, 58, 237, 0.4);
+}
+
 /* ===== Loading / Empty ===== */
 .mprof-loading {
   display: flex;

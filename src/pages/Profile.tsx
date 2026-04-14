@@ -2,7 +2,8 @@ import { useEffect, useState, useRef } from 'react';
 import { ref, onValue, set, remove, get } from 'firebase/database';
 import {
   User as UserIcon, Camera, BookOpen, Palette, Music, Timer, Trash2,
-  Users as UsersIcon, Edit3, Save, ArrowLeft, Play, Loader2, X
+  Users as UsersIcon, Edit3, Save, ArrowLeft, Play, Loader2, X, Share2,
+  BarChart3, TrendingUp, Film, Tv
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../services/firebase';
@@ -122,10 +123,12 @@ export const Profile: React.FC = () => {
 
   const [animeRatings, setAnimeRatings] = useState<UserAnimeRating[]>([]);
   const [themeRatings, setThemeRatings] = useState<UserThemeRating[]>([]);
+  const [movieCount, setMovieCount] = useState(0);
+  const [seriesCount, setSeriesCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<{ mode: 'anime' | 'theme'; item: UserAnimeRating | UserThemeRating } | null>(null);
-  const [viewMode, setViewMode] = useState<'anime' | 'themes'>('anime');
+  const [viewMode, setViewMode] = useState<'anime' | 'themes' | 'stats'>('anime');
   const [groupByAnime, setGroupByAnime] = useState(true);
   const [themeFilter, setThemeFilter] = useState<'all' | 'OP' | 'ED'>('all');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -187,6 +190,17 @@ export const Profile: React.FC = () => {
 
     return () => { unsubAvatar(); unsubAnime(); unsubTheme(); };
   }, [user, navigate]);
+
+  // Fetch movie/series counts for stats
+  useEffect(() => {
+    if (!user) return;
+    get(ref(db, `users/${user.uid}/movieRatings`)).then(snap => {
+      setMovieCount(snap.exists() ? Object.keys(snap.val()).length : 0);
+    });
+    get(ref(db, `users/${user.uid}/seriesRatings`)).then(snap => {
+      setSeriesCount(snap.exists() ? Object.keys(snap.val()).length : 0);
+    });
+  }, [user]);
 
   // ── Avatar upload (base64 in RTDB) ──
   const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -343,6 +357,18 @@ export const Profile: React.FC = () => {
           <h2 className="profile-name">{displayName}</h2>
           <p className="profile-email">{user.email}</p>
 
+          <button
+            className="profile-share-btn"
+            onClick={() => {
+              const url = `${window.location.origin}/profil/${user.uid}`;
+              navigator.clipboard.writeText(url).then(() => {
+                showToast("Lien du profil copié !", "success");
+              });
+            }}
+          >
+            <Share2 size={14} /> Partager mon profil
+          </button>
+
           <div className="profile-stats">
             <div className="stat-card">
               <span className="stat-value">{animeCount}</span>
@@ -368,6 +394,9 @@ export const Profile: React.FC = () => {
           </button>
           <button className={`pv-btn ${viewMode === 'themes' ? 'active' : ''}`} onClick={() => setViewMode('themes')}>
             <Play size={16} /> Mes OP/ED
+          </button>
+          <button className={`pv-btn ${viewMode === 'stats' ? 'active' : ''}`} onClick={() => setViewMode('stats')}>
+            <BarChart3 size={16} /> Stats
           </button>
         </div>
 
@@ -460,7 +489,7 @@ export const Profile: React.FC = () => {
               </div>
             )}
           </div>
-        ) : (
+        ) : viewMode === 'themes' ? (
           /* ═══ THEME RATINGS ═══ */
           <div className="profile-ratings-section">
             <div className="profile-section-header">
@@ -523,7 +552,163 @@ export const Profile: React.FC = () => {
               );
             })()}
           </div>
-        )}
+        ) : viewMode === 'stats' ? (
+          /* ═══ STATS ═══ */
+          (() => {
+            const catAvg = (key: keyof UserAnimeRating) => {
+              if (animeCount === 0) return 0;
+              return Math.round(animeRatings.reduce((s, r) => s + ((r as any)[key] || 0), 0) / animeCount);
+            };
+            const globalAnimeAvg = animeCount > 0
+              ? Math.round(animeRatings.reduce((s, r) => s + (r.plot + r.characters + r.animation + r.ost + r.pacing) / 5, 0) / animeCount)
+              : 0;
+            const globalThemeAvg = themeCount > 0
+              ? Math.round(themeRatings.reduce((s, r) => s + (r.music + r.animation) / 2, 0) / themeCount)
+              : 0;
+
+            const distribution = [0, 0, 0, 0, 0];
+            animeRatings.forEach(r => {
+              const avg = (r.plot + r.characters + r.animation + r.ost + r.pacing) / 5;
+              distribution[Math.min(Math.floor(avg / 20), 4)]++;
+            });
+            const maxDist = Math.max(...distribution, 1);
+
+            const sortedByScore = [...animeRatings].sort((a, b) => {
+              const avgA = (a.plot + a.characters + a.animation + a.ost + a.pacing) / 5;
+              const avgB = (b.plot + b.characters + b.animation + b.ost + b.pacing) / 5;
+              return avgB - avgA;
+            });
+            const best = sortedByScore[0] || null;
+            const worst = sortedByScore.length > 1 ? sortedByScore[sortedByScore.length - 1] : null;
+
+            const catMeta = [
+              { key: 'plot', label: 'Scénario', color: '#8b5cf6', icon: BookOpen },
+              { key: 'characters', label: 'Personnages', color: '#06d6a0', icon: UsersIcon },
+              { key: 'animation', label: 'Animation', color: '#f72585', icon: Palette },
+              { key: 'ost', label: 'OST', color: '#fbbf24', icon: Music },
+              { key: 'pacing', label: 'Rythme', color: '#06b6d4', icon: Timer },
+            ];
+
+            return (
+              <div className="profile-stats-section">
+                {/* Totaux */}
+                <div className="pstats-grid">
+                  <div className="pstats-card glass-panel">
+                    <Play size={18} style={{ color: '#8b5cf6' }} />
+                    <span className="pstats-val">{animeCount}</span>
+                    <span className="pstats-lbl">Saisons</span>
+                  </div>
+                  <div className="pstats-card glass-panel">
+                    <Music size={18} style={{ color: '#f72585' }} />
+                    <span className="pstats-val">{themeCount}</span>
+                    <span className="pstats-lbl">OP/ED</span>
+                  </div>
+                  <div className="pstats-card glass-panel">
+                    <Film size={18} style={{ color: '#e63946' }} />
+                    <span className="pstats-val">{movieCount}</span>
+                    <span className="pstats-lbl">Films</span>
+                  </div>
+                  <div className="pstats-card glass-panel">
+                    <Tv size={18} style={{ color: '#3a86ff' }} />
+                    <span className="pstats-val">{seriesCount}</span>
+                    <span className="pstats-lbl">Séries</span>
+                  </div>
+                </div>
+
+                {/* Moyennes globales */}
+                {(animeCount > 0 || themeCount > 0) && (
+                  <div className="pstats-averages glass-panel">
+                    <h3><TrendingUp size={16} /> Moyennes globales</h3>
+                    <div className="pstats-avg-row">
+                      {animeCount > 0 && (
+                        <div className="pstats-avg-item">
+                          <span className="pstats-avg-val" style={{ color: '#8b5cf6' }}>{globalAnimeAvg}</span>
+                          <span className="pstats-avg-lbl">Anime</span>
+                        </div>
+                      )}
+                      {themeCount > 0 && (
+                        <div className="pstats-avg-item">
+                          <span className="pstats-avg-val" style={{ color: '#f72585' }}>{globalThemeAvg}</span>
+                          <span className="pstats-avg-lbl">OP/ED</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Barres par catégorie */}
+                {animeCount > 0 && (
+                  <div className="pstats-breakdown glass-panel">
+                    <h3><BarChart3 size={16} /> Notes par catégorie</h3>
+                    <div className="pstats-bars">
+                      {catMeta.map(c => {
+                        const val = catAvg(c.key as keyof UserAnimeRating);
+                        return (
+                          <div key={c.key} className="pstats-bar-row">
+                            <div className="pstats-bar-label" style={{ color: c.color }}>
+                              <c.icon size={13} /> {c.label}
+                            </div>
+                            <div className="pstats-bar-track">
+                              <div className="pstats-bar-fill" style={{ width: `${val}%`, background: c.color }} />
+                            </div>
+                            <span className="pstats-bar-val" style={{ color: c.color }}>{val}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Distribution */}
+                {animeCount > 2 && (
+                  <div className="pstats-dist glass-panel">
+                    <h3><BarChart3 size={16} /> Distribution des notes</h3>
+                    <div className="pstats-dist-chart">
+                      {['0-20', '20-40', '40-60', '60-80', '80-100'].map((label, i) => (
+                        <div key={label} className="pstats-dist-col">
+                          <div className="pstats-dist-bar-wrap">
+                            <div className="pstats-dist-bar" style={{ height: `${(distribution[i] / maxDist) * 100}%` }} />
+                          </div>
+                          <span className="pstats-dist-count">{distribution[i]}</span>
+                          <span className="pstats-dist-label">{label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Best & worst */}
+                {best && (
+                  <div className="pstats-extremes glass-panel">
+                    <div className="pstats-extreme">
+                      <span className="pstats-ext-label">🏆 Meilleure note</span>
+                      <span className="pstats-ext-name">{best.animeName}</span>
+                      <span className={`pstats-ext-score ${getScoreColor(Math.round((best.plot + best.characters + best.animation + best.ost + best.pacing) / 5))}`}>
+                        {Math.round((best.plot + best.characters + best.animation + best.ost + best.pacing) / 5)}/100
+                      </span>
+                    </div>
+                    {worst && worst.id !== best.id && (
+                      <div className="pstats-extreme">
+                        <span className="pstats-ext-label">📉 Plus basse note</span>
+                        <span className="pstats-ext-name">{worst.animeName}</span>
+                        <span className={`pstats-ext-score ${getScoreColor(Math.round((worst.plot + worst.characters + worst.animation + worst.ost + worst.pacing) / 5))}`}>
+                          {Math.round((worst.plot + worst.characters + worst.animation + worst.ost + worst.pacing) / 5)}/100
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {animeCount === 0 && themeCount === 0 && (
+                  <div className="profile-empty glass-panel">
+                    <BarChart3 size={40} style={{ color: 'var(--text-muted)' }} />
+                    <p>Pas encore assez de données pour les statistiques.</p>
+                  </div>
+                )}
+              </div>
+            );
+          })()
+        ) : null}
       </main>
 
       {editingItem && (

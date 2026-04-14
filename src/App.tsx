@@ -18,6 +18,8 @@ const MediaDetail = lazy(() => import('./pages/MediaDetail').then(m => ({ defaul
 const Playlist = lazy(() => import('./pages/Playlist').then(m => ({ default: m.Playlist })));
 const MediaLeaderboard = lazy(() => import('./pages/MediaLeaderboard').then(m => ({ default: m.MediaLeaderboard })));
 const MediaProfile = lazy(() => import('./pages/MediaProfile').then(m => ({ default: m.MediaProfile })));
+const PublicProfile = lazy(() => import('./pages/PublicProfile').then(m => ({ default: m.PublicProfile })));
+const TierList = lazy(() => import('./pages/TierList').then(m => ({ default: m.TierList })));
 
 function App() {
   return (
@@ -25,6 +27,7 @@ function App() {
       <Suspense fallback={<Loader />}>
         <Routes>
           <Route path="/" element={<Hub />} />
+          <Route path="/profil/:userId" element={<PublicProfile />} />
 
           {/* Anime section */}
           <Route element={<SectionLayout config={ANIME_CONFIG} />}>
@@ -34,6 +37,7 @@ function App() {
             <Route path="/anime/party/:id" element={<PartyRoom />} />
             <Route path="/anime/leaderboard" element={<Leaderboard />} />
             <Route path="/anime/profile" element={<Profile />} />
+            <Route path="/anime/tierlist" element={<TierList />} />
             <Route path="/anime/:name" element={<AnimeDetail />} />
           </Route>
 
@@ -44,6 +48,7 @@ function App() {
             <Route path="/films/:id" element={<MediaDetail />} />
             <Route path="/films/leaderboard" element={<MediaLeaderboard />} />
             <Route path="/films/profile" element={<MediaProfile />} />
+            <Route path="/films/tierlist" element={<TierList />} />
           </Route>
 
           {/* Séries section */}
@@ -53,6 +58,7 @@ function App() {
             <Route path="/series/:id" element={<MediaDetail />} />
             <Route path="/series/leaderboard" element={<MediaLeaderboard />} />
             <Route path="/series/profile" element={<MediaProfile />} />
+            <Route path="/series/tierlist" element={<TierList />} />
           </Route>
         </Routes>
       </Suspense>
