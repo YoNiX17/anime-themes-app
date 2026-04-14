@@ -1,3 +1,11 @@
+import type { Anime } from '../services/api';
+
+export interface FranchiseGroup {
+  franchise: string;
+  seasons: Anime[];
+  cover: string;
+}
+
 const ANIME_PATTERNS: [RegExp, string][] = [
   [/^Shingeki no Kyojin/i, 'Shingeki no Kyojin'],
   [/^Kimetsu no Yaiba/i, 'Kimetsu no Yaiba'],
@@ -58,4 +66,36 @@ export function getAnimeName(seasonName: string, franchise?: string): string {
   return seasonName
     .replace(/\s*(Season\s*\d+|Part\s*\d+|\d+(st|nd|rd|th)\s*Season|The\s*Final\s*Season|Zoku|Shin|Kanketsu-hen|:.*$)/gi, '')
     .trim() || seasonName;
+}
+
+/**
+ * Group an array of Anime (from AnimeThemes search) by franchise.
+ * Seasons inside each group are sorted by year (ascending).
+ * Returns groups sorted so the group with the most seasons comes first,
+ * ties broken alphabetically.
+ */
+export function groupByFranchise(animes: Anime[]): FranchiseGroup[] {
+  const map = new Map<string, Anime[]>();
+
+  for (const anime of animes) {
+    const key = getAnimeName(anime.name);
+    const list = map.get(key);
+    if (list) {
+      list.push(anime);
+    } else {
+      map.set(key, [anime]);
+    }
+  }
+
+  const groups: FranchiseGroup[] = [];
+  for (const [franchise, seasons] of map) {
+    seasons.sort((a, b) => (a.year || 0) - (b.year || 0));
+    const first = seasons[0];
+    const largeCover = first.images?.find(img => img.facet === 'Large Cover')?.link;
+    const smallCover = first.images?.find(img => img.facet === 'Small Cover')?.link;
+    groups.push({ franchise, seasons, cover: largeCover || smallCover || '' });
+  }
+
+  groups.sort((a, b) => b.seasons.length - a.seasons.length || a.franchise.localeCompare(b.franchise));
+  return groups;
 }
