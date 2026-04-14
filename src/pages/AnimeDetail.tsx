@@ -8,16 +8,19 @@ import { ref, get } from 'firebase/database';
 import { db } from '../services/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { ThemePlayerModal } from '../components/ThemePlayerModal';
+import { CharacterModal } from '../components/CharacterModal';
 import { RatingControl } from '../components/RatingControl';
 import { Loader } from '../components/Loader';
 import {
   searchAnime, findMalId,
-  fetchJikanAnimeDetail, fetchJikanStaff, fetchJikanCharacters, fetchJikanRecommendations,
+  fetchJikanAnimeDetail, fetchJikanStaff, fetchJikanRecommendations,
   fetchJikanEpisodes, translateToFrench,
 } from '../services/api';
 import type {
-  Anime, JikanAnimeDetail, JikanStaffEntry, JikanCharacterEntry, JikanRecommendation, JikanEpisode
+  Anime, JikanAnimeDetail, JikanStaffEntry, JikanRecommendation, JikanEpisode
 } from '../services/api';
+import { fetchAniListCharacters } from '../services/anilist';
+import type { AniListCharacter } from '../services/anilist';
 import { getAnimeName } from '../utils/animeGrouping';
 import './AnimeDetail.css';
 
@@ -40,11 +43,12 @@ export const AnimeDetail: React.FC = () => {
   const [anime, setAnime] = useState<Anime | null>(null);
   const [detail, setDetail] = useState<JikanAnimeDetail | null>(null);
   const [staff, setStaff] = useState<JikanStaffEntry[]>([]);
-  const [characters, setCharacters] = useState<JikanCharacterEntry[]>([]);
+  const [characters, setCharacters] = useState<AniListCharacter[]>([]);
   const [recommendations, setRecommendations] = useState<JikanRecommendation[]>([]);
   const [episodes, setEpisodes] = useState<JikanEpisode[]>([]);
   const [loading, setLoading] = useState(true);
   const [showPlayer, setShowPlayer] = useState(false);
+  const [selectedCharacter, setSelectedCharacter] = useState<AniListCharacter | null>(null);
   const [hasUserRating, setHasUserRating] = useState(false);
   const [siteScore, setSiteScore] = useState<{ avg: number; count: number } | null>(null);
   const [frenchSynopsis, setFrenchSynopsis] = useState<string | null>(null);
@@ -102,6 +106,9 @@ export const AnimeDetail: React.FC = () => {
     const matched = results[0] || null;
     setAnime(matched);
 
+    // Step 1b: Fetch characters from AniList (no rate-limit dependency on Jikan)
+    fetchAniListCharacters(animeName).then(setCharacters);
+
     // Step 2: Find MAL ID and fetch Jikan details
     const malIdParam = searchParams.get('mal');
     let malId = malIdParam ? parseInt(malIdParam, 10) : null;
@@ -116,14 +123,12 @@ export const AnimeDetail: React.FC = () => {
       setDetail(detailData);
 
       // Rate limiting is handled automatically by jikanFetch in api.ts
-      const [staffData, charsData, recsData, episodesData] = await Promise.all([
+      const [staffData, recsData, episodesData] = await Promise.all([
         fetchJikanStaff(malId),
-        fetchJikanCharacters(malId),
         fetchJikanRecommendations(malId),
         fetchJikanEpisodes(malId),
       ]);
       setStaff(staffData);
-      setCharacters(charsData);
       setRecommendations(recsData);
       setEpisodes(episodesData.episodes);
 
@@ -155,9 +160,9 @@ export const AnimeDetail: React.FC = () => {
     )
   ).slice(0, 8);
 
-  const mainCharacters = characters.filter(c => c.role === 'Main').slice(0, 8);
-  const supportCharacters = characters.filter(c => c.role === 'Supporting').slice(0, 4);
-  const displayChars = [...mainCharacters, ...supportCharacters].slice(0, 8);
+  const mainCharacters = characters.filter(c => c.role === 'MAIN').slice(0, 8);
+  const supportCharacters = characters.filter(c => c.role === 'SUPPORTING').slice(0, 6);
+  const displayChars = [...mainCharacters, ...supportCharacters].slice(0, 12);
 
   // Compute franchise name from Jikan relations (look for Prequel/Parent/Adaptation chain root)
   const computeFranchise = (): string | undefined => {
@@ -415,21 +420,25 @@ export const AnimeDetail: React.FC = () => {
             <h2 className="detail-section-title"><Users size={18} /> Personnages</h2>
             <div className="detail-chars-grid">
               {displayChars.map((c) => (
-                <div key={c.character.mal_id} className="char-card glass-panel">
+                <div key={c.id} className="char-card glass-panel" onClick={() => setSelectedCharacter(c)}>
                   <img
-                    src={c.character.images?.webp?.image_url || c.character.images?.jpg?.image_url}
-                    alt={c.character.name}
+                    src={c.image.large || c.image.medium}
+                    alt={c.name.full}
                     className="char-img"
                     loading="lazy"
                   />
                   <div className="char-info">
-                    <span className="char-name">{c.character.name}</span>
-                    <span className={`char-role ${c.role === 'Main' ? 'main' : 'support'}`}>{c.role === 'Main' ? 'Principal' : 'Secondaire'}</span>
+                    <span className="char-name">{c.name.full}</span>
+                    <span className={`char-role ${c.role === 'MAIN' ? 'main' : 'support'}`}>{c.role === 'MAIN' ? 'Principal' : 'Secondaire'}</span>
                   </div>
                 </div>
               ))}
             </div>
           </section>
+        )}
+
+        {selectedCharacter && (
+          <CharacterModal character={selectedCharacter} onClose={() => setSelectedCharacter(null)} />
         )}
 
         {/* ===== RELATIONS (Sequels, Prequels, etc.) ===== */}

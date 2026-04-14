@@ -398,6 +398,14 @@
   border-radius: var(--radius-md);
   text-align: center;
   gap: 0.5rem;
+  cursor: pointer;
+  transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.char-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(124, 58, 237, 0.3);
+  box-shadow: 0 8px 24px rgba(124, 58, 237, 0.12);
 }
 
 .char-img {
@@ -406,6 +414,11 @@
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid rgba(124, 58, 237, 0.2);
+  transition: border-color var(--transition-fast);
+}
+
+.char-card:hover .char-img {
+  border-color: rgba(124, 58, 237, 0.5);
 }
 
 .char-info {

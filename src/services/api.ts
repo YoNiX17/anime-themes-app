@@ -95,15 +95,6 @@ export interface JikanStaffEntry {
   positions: string[];
 }
 
-export interface JikanCharacterEntry {
-  character: {
-    mal_id: number;
-    name: string;
-    images: { jpg: { image_url: string }; webp: { image_url: string } };
-  };
-  role: string;
-}
-
 export interface JikanAnimeDetail {
   mal_id: number;
   title: string;
@@ -180,20 +171,6 @@ export const fetchJikanAnimeDetail = async (malId: number): Promise<JikanAnimeDe
 export const fetchJikanStaff = async (malId: number): Promise<JikanStaffEntry[]> => {
   try {
     const res = await jikanFetch(`${JIKAN_BASE}/anime/${malId}/staff`);
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data.data || [];
-  } catch {
-    return [];
-  }
-};
-
-/**
- * Fetch anime characters from Jikan
- */
-export const fetchJikanCharacters = async (malId: number): Promise<JikanCharacterEntry[]> => {
-  try {
-    const res = await jikanFetch(`${JIKAN_BASE}/anime/${malId}/characters`);
     if (!res.ok) return [];
     const data = await res.json();
     return data.data || [];
