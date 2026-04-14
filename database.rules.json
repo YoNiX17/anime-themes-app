@@ -112,7 +112,7 @@
         "ratings": {
           ".read": true,
           "$animeId": {
-            ".validate": "newData.hasChildren(['plot','characters','animation','ost','pacing','animeName','timestamp'])",
+            ".validate": "(newData.child('rated').val() === false && newData.hasChildren(['animeName','timestamp','rated'])) || (newData.hasChildren(['plot','characters','animation','ost','pacing','animeName','timestamp']))",
             "plot": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" },
             "characters": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" },
             "animation": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" },
