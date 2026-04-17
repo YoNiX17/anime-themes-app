@@ -14,9 +14,10 @@
 }
 
 .rating-header h4 {
+  font-family: 'Righteous', sans-serif;
   font-size: 1rem;
   color: var(--text-bright);
-  font-weight: 700;
+  font-weight: 400;
   margin: 0;
 }
 
@@ -82,8 +83,9 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  font-size: 0.82rem;
-  font-weight: 700;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
 }
 
 .category-scores {
@@ -95,7 +97,7 @@
 .category-value {
   font-size: 1.05rem;
   font-weight: 800;
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Righteous', sans-serif;
 }
 
 .category-max {
@@ -207,9 +209,9 @@
 
 .overall-value {
   font-size: 1.6rem;
-  font-weight: 900;
+  font-weight: 400;
   color: var(--text-bright);
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Righteous', sans-serif;
 }
 
 .overall-max {
@@ -231,8 +233,9 @@
   align-items: center;
   gap: 0.4rem;
   padding: 0.6rem 1.25rem;
-  font-size: 0.85rem;
-  font-weight: 700;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
   border-radius: var(--radius-md);
   border: none;
   background: var(--accent-gradient);

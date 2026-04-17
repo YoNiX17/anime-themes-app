@@ -59,10 +59,11 @@
 }
 
 .logo h1 {
+  font-family: 'Righteous', sans-serif;
   font-size: 1.35rem;
   margin: 0;
-  font-weight: 800;
-  letter-spacing: -0.03em;
+  font-weight: 400;
+  letter-spacing: 0.02em;
 }
 
 .search-form {
@@ -99,7 +100,8 @@
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: var(--radius-xl);
   color: var(--text-primary);
-  font-size: 0.95rem;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.9rem;
   transition: all var(--transition-normal);
 }
 
@@ -130,8 +132,9 @@
   gap: 0.5rem;
   padding: 0.6rem 1rem;
   border-radius: 9999px;
+  font-family: 'Poppins', sans-serif;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   cursor: pointer;
   transition: all var(--transition-fast);
 }
@@ -156,7 +159,9 @@
 }
 
 .user-name {
+  font-family: 'Poppins', sans-serif;
   font-weight: 600;
+  font-size: 0.85rem;
   color: var(--text-bright);
 }
 
@@ -184,8 +189,9 @@
   border: 1px solid rgba(251, 191, 36, 0.15);
   border-radius: 9999px;
   color: #fbbf24;
-  font-weight: 700;
-  font-size: 0.82rem;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 0.78rem;
   cursor: pointer;
   transition: all var(--transition-fast);
 }

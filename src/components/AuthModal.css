@@ -29,7 +29,9 @@
 }
 
 .auth-title {
+  font-family: 'Righteous', sans-serif;
   font-size: 1.75rem;
+  font-weight: 400;
   color: var(--text-bright);
   text-align: center;
   margin-bottom: 0.5rem;
@@ -38,7 +40,9 @@
 .auth-subtitle {
   text-align: center;
   color: var(--text-muted);
-  font-size: 0.9rem;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 300;
   margin-bottom: 2rem;
 }
 
@@ -62,8 +66,9 @@
   padding: 0.85rem;
   background: #ffffff;
   color: #3c4043;
+  font-family: 'Poppins', sans-serif;
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: all var(--transition-fast);
@@ -134,7 +139,8 @@
   border: 1px solid var(--border-glass);
   border-radius: var(--radius-md);
   color: var(--text-primary);
-  font-size: 0.95rem;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.9rem;
   transition: all var(--transition-normal);
 }
 
@@ -154,8 +160,9 @@
   padding: 0.85rem;
   background: var(--accent-gradient);
   color: white;
-  font-weight: 700;
-  font-size: 1rem;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 0.95rem;
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: transform var(--transition-fast), box-shadow var(--transition-fast);

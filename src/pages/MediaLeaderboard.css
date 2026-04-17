@@ -41,12 +41,15 @@
 }
 
 .mlb-hero-title {
+  font-family: 'Righteous', sans-serif;
   font-size: 1.8rem;
-  font-weight: 900;
+  font-weight: 400;
 }
 
 .mlb-hero-subtitle {
-  font-size: 0.9rem;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 300;
   color: var(--text-secondary);
 }
 
@@ -174,8 +177,9 @@
 }
 
 .mlb-podium-score {
+  font-family: 'Righteous', sans-serif;
   font-size: 1.2rem;
-  font-weight: 800;
+  font-weight: 400;
 }
 
 .mlb-podium-count {
@@ -245,8 +249,9 @@
 }
 
 .mlb-row-score {
+  font-family: 'Righteous', sans-serif;
   font-size: 1rem;
-  font-weight: 800;
+  font-weight: 400;
   min-width: 45px;
   text-align: right;
 }

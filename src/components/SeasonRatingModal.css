@@ -47,15 +47,18 @@
 }
 
 .srm-title {
+  font-family: 'Righteous', sans-serif;
   font-size: 1.3rem;
-  font-weight: 800;
+  font-weight: 400;
   color: var(--text-primary);
   margin-bottom: 0.3rem;
   padding-right: 2rem;
 }
 
 .srm-subtitle {
-  font-size: 0.85rem;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 400;
   color: var(--text-muted);
   margin-bottom: 0.8rem;
 }
@@ -149,7 +152,8 @@
 }
 
 .srm-season-name {
-  font-size: 0.85rem;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.82rem;
   font-weight: 600;
   color: var(--text-primary);
   white-space: nowrap;
@@ -170,8 +174,9 @@
   gap: 0.5rem;
   width: 100%;
   padding: 0.7rem;
-  font-size: 0.9rem;
-  font-weight: 700;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
   color: white;
   background: var(--accent-gradient);
   border: none;

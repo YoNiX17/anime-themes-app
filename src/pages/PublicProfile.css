@@ -60,8 +60,9 @@
 }
 
 .pp-name {
+  font-family: 'Righteous', sans-serif;
   font-size: 1.4rem;
-  font-weight: 700;
+  font-weight: 400;
   color: var(--text-primary);
   margin: 0;
 }
@@ -90,8 +91,9 @@
   min-width: 70px;
 }
 .pp-stat-val {
+  font-family: 'Righteous', sans-serif;
   font-size: 1.3rem;
-  font-weight: 700;
+  font-weight: 400;
   color: var(--accent-primary-light, #a78bfa);
 }
 .pp-stat-lbl {

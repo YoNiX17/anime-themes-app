@@ -46,13 +46,16 @@
 }
 
 .pl-hero-title {
+  font-family: 'Righteous', sans-serif;
   font-size: 1.8rem;
-  font-weight: 900;
+  font-weight: 400;
   margin-bottom: 0.4rem;
 }
 
 .pl-hero-sub {
-  font-size: 0.9rem;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 300;
   color: var(--text-secondary);
 }
 

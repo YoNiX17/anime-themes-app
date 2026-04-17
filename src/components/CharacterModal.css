@@ -131,8 +131,9 @@
 }
 
 .char-modal-name {
+  font-family: 'Righteous', sans-serif;
   font-size: 1.5rem;
-  font-weight: 800;
+  font-weight: 400;
   color: var(--text-bright);
   line-height: 1.2;
   padding-right: 2.5rem;
@@ -172,8 +173,9 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  font-size: 0.85rem;
-  line-height: 1.6;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.82rem;
+  line-height: 1.7;
   color: var(--text-secondary);
   max-height: 240px;
   overflow-y: auto;
@@ -223,8 +225,9 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  font-size: 0.88rem;
-  font-weight: 700;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
   color: var(--text-primary);
   margin-bottom: 0.6rem;
 }

@@ -65,7 +65,9 @@
 }
 
 .lb-hero-title {
+  font-family: 'Righteous', sans-serif;
   font-size: 2.2rem;
+  font-weight: 400;
   color: var(--text-bright);
   margin-bottom: 0.5rem;
 }
@@ -339,8 +341,8 @@
 
 .podium-score {
   font-size: 2.5rem;
-  font-weight: 900;
-  font-family: 'Outfit', sans-serif;
+  font-weight: 400;
+  font-family: 'Righteous', sans-serif;
   line-height: 1;
 }
 
@@ -429,9 +431,9 @@
 
 .lb-col-rank {
   font-size: 0.95rem;
-  font-weight: 800;
+  font-weight: 400;
   color: var(--text-secondary);
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Righteous', sans-serif;
   text-align: center;
 }
 
@@ -548,8 +550,8 @@
 .lb-col-cat,
 .lb-col-overall {
   font-size: 0.82rem;
-  font-weight: 700;
-  font-family: 'Outfit', sans-serif;
+  font-weight: 400;
+  font-family: 'Righteous', sans-serif;
   text-align: center;
 }
 

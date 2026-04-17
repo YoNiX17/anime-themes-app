@@ -26,14 +26,16 @@
 }
 
 .search-results-title {
+  font-family: 'Righteous', sans-serif;
   font-size: 1.2rem;
-  font-weight: 700;
+  font-weight: 400;
   color: var(--text-primary);
 }
 
 .search-results-count {
-  font-size: 0.82rem;
-  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 500;
   color: var(--text-muted);
   background: rgba(255, 255, 255, 0.06);
   padding: 0.2rem 0.7rem;
@@ -78,7 +80,8 @@
   gap: 0.4rem;
   margin-top: 0.5rem;
   padding: 0.5rem 1rem;
-  font-size: 0.85rem;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.82rem;
   font-weight: 600;
   color: white;
   background: var(--accent-gradient);
@@ -206,8 +209,9 @@
 }
 
 .franchise-name {
-  font-size: 1.05rem;
-  font-weight: 700;
+  font-family: 'Poppins', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
   color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;

@@ -112,7 +112,8 @@
 }
 
 .media-card-title {
-  font-size: 0.9rem;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.85rem;
   font-weight: 600;
   color: var(--text-primary);
   white-space: nowrap;
@@ -126,7 +127,8 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.78rem;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.72rem;
   color: var(--text-muted);
 }
 

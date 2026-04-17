@@ -90,13 +90,15 @@
 }
 
 .profile-name {
+  font-family: 'Righteous', sans-serif;
   font-size: 1.4rem;
-  font-weight: 700;
+  font-weight: 400;
   color: var(--text-primary);
   margin: 0;
 }
 .profile-email {
-  font-size: 0.85rem;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.82rem;
   color: var(--text-muted);
   margin: 4px 0 8px;
 }
@@ -164,12 +166,14 @@
   min-width: 90px;
 }
 .stat-value {
+  font-family: 'Righteous', sans-serif;
   font-size: 1.5rem;
-  font-weight: 700;
+  font-weight: 400;
   color: var(--accent);
 }
 .stat-label {
-  font-size: 0.75rem;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.72rem;
   color: var(--text-muted);
   margin-top: 2px;
 }
@@ -275,12 +279,12 @@
 /* ── Rating row rank number ── */
 .rating-row-rank {
   font-size: 0.82rem;
-  font-weight: 800;
+  font-weight: 400;
   color: var(--text-muted);
   min-width: 24px;
   text-align: center;
   flex-shrink: 0;
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Righteous', sans-serif;
 }
 
 /* Empty */
@@ -345,8 +349,9 @@
 }
 .franchise-name {
   margin: 0;
-  font-size: 1.1rem;
-  font-weight: 700;
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 600;
   color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;

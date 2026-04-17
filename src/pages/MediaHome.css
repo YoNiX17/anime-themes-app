@@ -6,13 +6,16 @@
 }
 
 .media-hero-title {
+  font-family: 'Righteous', sans-serif;
   font-size: clamp(1.6rem, 4vw, 2.4rem);
-  font-weight: 900;
+  font-weight: 400;
   margin-bottom: 0.4rem;
 }
 
 .media-hero-subtitle {
-  font-size: 0.95rem;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 300;
   color: var(--text-secondary);
   max-width: 500px;
   margin: 0 auto;
@@ -52,13 +55,15 @@
 }
 
 .media-section-title {
+  font-family: 'Righteous', sans-serif;
   font-size: 1.1rem;
-  font-weight: 700;
+  font-weight: 400;
 }
 
 .media-section-count {
-  font-size: 0.78rem;
-  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
   color: var(--text-muted);
   background: rgba(255, 255, 255, 0.06);
   padding: 0.2rem 0.6rem;

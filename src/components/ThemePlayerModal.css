@@ -82,13 +82,17 @@
 }
 
 .modal-title {
+  font-family: 'Righteous', sans-serif;
   font-size: 1.5rem;
+  font-weight: 400;
   margin-bottom: 0.25rem;
   color: var(--text-bright);
 }
 
 .modal-subtitle {
-  font-size: 0.85rem;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 400;
   color: var(--text-muted);
   text-transform: capitalize;
   display: flex;
@@ -159,8 +163,9 @@
   display: inline-flex;
   align-items: center;
   padding: 0.2rem 0.6rem;
-  font-size: 0.7rem;
-  font-weight: 800;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.68rem;
+  font-weight: 700;
   border-radius: 4px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -189,8 +194,9 @@
   gap: 0.6rem;
   padding: 1rem 1.25rem;
   border-bottom: 1px solid var(--border-glass);
-  font-size: 0.85rem;
-  font-weight: 700;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
   color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -242,9 +248,9 @@
 }
 
 .theme-type {
-  font-weight: 800;
-  font-family: 'Outfit', sans-serif;
-  font-size: 0.75rem;
+  font-weight: 700;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.72rem;
   width: 36px;
   text-align: center;
   flex-shrink: 0;
