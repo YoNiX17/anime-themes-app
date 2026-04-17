@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
-import { Play, Film, Tv, Sparkles, ArrowRight, Star, TrendingUp, Users } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Play, Film, Tv, Sparkles, ArrowRight, Star, TrendingUp, Users, BarChart3, Zap, Trophy } from 'lucide-react';
 import './Hub.css';
 
 const SECTIONS = [
@@ -54,12 +54,35 @@ const SECTIONS = [
   },
 ];
 
+const FEATURES = [
+  { icon: BarChart3, label: 'Notation détaillée', desc: 'Multi-critères /100' },
+  { icon: Trophy, label: 'Leaderboard', desc: 'Classement communautaire' },
+  { icon: Zap, label: 'Rating Party', desc: 'Note en temps réel' },
+];
+
 export const Hub: React.FC = () => {
   const navigate = useNavigate();
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
+  const [visible, setVisible] = useState(false);
+  const featuresRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setVisible(true);
+  }, []);
+
+  useEffect(() => {
+    const el = featuresRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) el.classList.add('hub-features--visible'); },
+      { threshold: 0.3 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
 
   return (
-    <div className="hub-container">
+    <div className={`hub-container ${visible ? 'hub-container--visible' : ''}`}>
       {/* Animated background orbs */}
       <div className="hub-bg" aria-hidden="true">
         <div className="hub-orb hub-orb-1" />
@@ -145,6 +168,22 @@ export const Hub: React.FC = () => {
                 </div>
               </div>
             </button>
+          );
+        })}
+      </div>
+
+      {/* Features strip */}
+      <div className="hub-features" ref={featuresRef}>
+        {FEATURES.map((f, i) => {
+          const FIcon = f.icon;
+          return (
+            <div key={i} className="hub-feature" style={{ animationDelay: `${i * 0.1}s` }}>
+              <FIcon size={20} strokeWidth={1.8} />
+              <div>
+                <span className="hub-feature-label">{f.label}</span>
+                <span className="hub-feature-desc">{f.desc}</span>
+              </div>
+            </div>
           );
         })}
       </div>
