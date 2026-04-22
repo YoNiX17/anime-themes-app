@@ -48,6 +48,9 @@ export interface QueueItem {
   anime: { id: number; name: string; slug: string; year: number; season: string };
   theme: { id: number; slug: string; type: string; sequence: number };
   video: { id: number; basename: string; link: string; resolution: number } | null;
+  addedBy?: string;      // uid of the user who added this theme (missing on legacy items → treated as host)
+  addedByName?: string;  // display name snapshot for UI
+  addedAt?: number;      // timestamp (serverTimestamp), used for stable ordering / tie-break
 }
 
 export interface PartyRoom {
@@ -115,10 +118,16 @@ export const leavePartyPresence = async (roomId: string, userId: string) => {
    ═══════════════════════════════════════════ */
 
 /**
- * Host adds a theme to the queue (does NOT start it)
+ * Any participant can add a theme to the queue (does NOT start it).
+ * `addedBy` lets us show who queued what and let that user remove their own entry.
  */
 export const addThemeToQueue = async (
-  roomId: string, anime: Anime, theme: AnimeTheme, video: Video | null
+  roomId: string,
+  anime: Anime,
+  theme: AnimeTheme,
+  video: Video | null,
+  addedBy?: string,
+  addedByName?: string,
 ) => {
   const queueRef = ref(db, `parties/${roomId}/themeQueue`);
   const snap = await get(queueRef);
@@ -127,6 +136,9 @@ export const addThemeToQueue = async (
     anime: { id: anime.id, name: anime.name, slug: anime.slug, year: anime.year, season: anime.season },
     theme: { id: theme.id, slug: theme.slug, type: theme.type, sequence: theme.sequence },
     video: video ? { id: video.id, basename: video.basename, link: video.link, resolution: video.resolution } : null,
+    ...(addedBy ? { addedBy } : {}),
+    ...(addedByName ? { addedByName } : {}),
+    addedAt: Date.now(),
   });
   await set(queueRef, queue);
 };

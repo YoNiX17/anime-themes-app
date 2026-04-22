@@ -111,6 +111,18 @@
   font-weight: 600;
 }
 
+.queue-item-by {
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-left: auto;
+  padding-right: 0.4rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+
 .queue-item-remove {
   background: transparent;
   border: none;

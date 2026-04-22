@@ -202,11 +202,11 @@ export const PartyRoom: React.FC = () => {
   };
 
   const handleSelectTheme = async (anime: Anime, theme: AnimeTheme) => {
-    if (!id || room?.hostId !== user?.uid) return;
+    if (!id || !user) return;
     const entry = theme.animethemeentries?.[0];
     const video = (entry && entry.videos?.length > 0) ? entry.videos[0] : null;
-    // Add to queue instead of direct select
-    await addThemeToQueue(id, anime, theme, video);
+    const displayName = user.displayName || user.email?.split('@')[0] || 'User';
+    await addThemeToQueue(id, anime, theme, video, user.uid, displayName);
     showToast(`${anime.name} — ${theme.type}${theme.sequence || ''} ajouté à la file`, "success");
   };
 
@@ -392,25 +392,29 @@ export const PartyRoom: React.FC = () => {
                   <>
                     <Play size={56} className="waiting-icon" />
                     <h3>En attente...</h3>
-                    <p>{isHost ? 'Cherche des animes ci-dessous et ajoute des thèmes à la file.' : 'Le host prépare la playlist.'}</p>
+                    <p>{queue.length === 0 ? 'Cherche des animes ci-dessous et ajoute des thèmes à la file.' : 'Le host va bientôt lancer la playlist.'}</p>
                   </>
                 ) : (
                   <>
                     <h3 className="queue-title">File d'attente ({queue.length} thème{queue.length > 1 ? 's' : ''})</h3>
                     <div className="queue-list">
-                      {queue.map((item, idx) => (
+                      {queue.map((item, idx) => {
+                        const canRemove = isHost || (!!user && item.addedBy === user.uid);
+                        return (
                         <div key={idx} className="queue-item">
                           <span className="queue-item-num">{idx + 1}</span>
                           <span className="queue-item-name">{item.anime.name}</span>
                           <span className="queue-item-badge">{item.theme.type}{item.theme.sequence || ''}</span>
+                          {item.addedByName && <span className="queue-item-by">par {item.addedByName}</span>}
                           {!item.video && <span className="queue-item-novideo">pas de vidéo</span>}
-                          {isHost && (
+                          {canRemove && (
                             <button className="queue-item-remove" onClick={() => handleRemoveFromQueue(idx)} title="Retirer">
                               <Trash2 size={12} />
                             </button>
                           )}
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                     {isHost && (
                       <button className="start-queue-btn" onClick={handleStartQueue}>
@@ -768,8 +772,8 @@ export const PartyRoom: React.FC = () => {
           </div>
         </div>
 
-        {/* ═══ Host search — bottom panel ═══ */}
-        {isHost && phase === 'waiting' && (
+        {/* ═══ Search — all participants can add themes ═══ */}
+        {phase === 'waiting' && (
           <div className="host-controls glass-panel">
             <h3><Search size={18} /> Ajouter des thèmes</h3>
             <form onSubmit={handleSearch} className="host-search-form">
