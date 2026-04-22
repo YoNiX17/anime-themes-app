@@ -374,7 +374,7 @@ export const Profile: React.FC = () => {
           <div className="profile-avatar-section">
             <div className="profile-avatar" onClick={() => fileInputRef.current?.click()}>
               {avatarUrl ? (
-                <img src={avatarUrl} alt="Avatar" className="avatar-img" />
+                <img loading="lazy" src={avatarUrl} alt="Avatar" className="avatar-img" />
               ) : (
                 <UserIcon size={40} />
               )}
@@ -472,7 +472,7 @@ export const Profile: React.FC = () => {
                   return (
                   <div key={f.anime} className="franchise-card glass-panel">
                     <div className="franchise-header" onClick={() => toggleFranchise(f.anime)}>
-                      {f.latestCover && <img src={f.latestCover} alt="" className="franchise-cover" />}
+                      {f.latestCover && <img loading="lazy" src={f.latestCover} alt="" className="franchise-cover" />}
                       <div className="franchise-info">
                         <h4 className="franchise-name">{f.anime}</h4>
                         <span className="franchise-count">{f.entries.length} saison{f.entries.length > 1 ? 's' : ''}</span>
@@ -544,7 +544,7 @@ export const Profile: React.FC = () => {
                   const overall = r.rated ? Math.round((r.plot + r.characters + r.animation + r.ost + r.pacing) / 5) : -1;
                   return (
                     <div key={r.id} className="rating-row glass-panel">
-                      {r.coverImage && <img src={r.coverImage} alt="" className="rating-row-cover" />}
+                      {r.coverImage && <img loading="lazy" src={r.coverImage} alt="" className="rating-row-cover" />}
                       <div className="rating-row-info">
                         <span className="rating-row-name">{r.animeName}</span>
                         {r.rated ? (

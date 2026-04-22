@@ -104,7 +104,7 @@ export const CharacterModal: React.FC<CharacterModalProps> = ({ character, onClo
         <div className="char-modal-body">
           {/* Left: Image + quick stats */}
           <div className="char-modal-left">
-            <img
+            <img loading="lazy"
               src={info.image.large}
               alt={info.name.full}
               className="char-modal-img"

@@ -175,7 +175,7 @@ export const MediaProfile: React.FC = () => {
         <div className="mprof-user glass-panel">
           <div className="mprof-avatar-wrapper" onClick={() => fileInputRef.current?.click()}>
             {avatarUrl ? (
-              <img src={avatarUrl} alt="avatar" className="mprof-avatar" />
+              <img loading="lazy" src={avatarUrl} alt="avatar" className="mprof-avatar" />
             ) : (
               <div className="mprof-avatar-blank"><UserIcon size={36} /></div>
             )}
@@ -215,7 +215,7 @@ export const MediaProfile: React.FC = () => {
                 <div key={item.id} className="mprof-card glass-panel">
                   <div className="mprof-card-poster" onClick={() => navigate(`${section.prefix}/${item.id}`)}>
                     {item.posterPath ? (
-                      <img src={tmdbImage(item.posterPath, 'w154')} alt={item.title} />
+                      <img loading="lazy" src={tmdbImage(item.posterPath, 'w154')} alt={item.title} />
                     ) : (
                       <div className="mprof-card-placeholder" />
                     )}

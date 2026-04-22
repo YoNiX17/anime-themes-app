@@ -404,7 +404,7 @@ chainsaw man ending 1`;
                       return (
                         <div key={anime.id} className={`pl-search-anime glass-panel ${isExpanded ? 'pl-anime-expanded' : ''}`}>
                           <div className="pl-anime-header" onClick={() => setExpandedAnime(isExpanded ? null : anime.id)}>
-                            {image && <img src={image} alt="" className="pl-anime-thumb" />}
+                            {image && <img loading="lazy" src={image} alt="" className="pl-anime-thumb" />}
                             <div className="pl-anime-info">
                               <span className="pl-anime-name">{anime.name}</span>
                               <span className="pl-anime-meta">

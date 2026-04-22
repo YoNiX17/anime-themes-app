@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Star, Clock, Calendar, Play, Sparkles, Users as UsersIcon } from 'lucide-react';
-import { ref, get } from 'firebase/database';
-import { db } from '../services/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useSection } from '../contexts/SectionContext';
 import { RatingControl } from '../components/RatingControl';
@@ -15,6 +13,7 @@ import {
 } from '../services/tmdb';
 import { translateToFrench } from '../services/api';
 import type { TMDBMovie, TMDBTVShow, TMDBCastMember, TMDBCrewMember, TMDBVideo } from '../services/tmdb';
+import { useSiteScore } from '../hooks/useSiteScore';
 import './MediaDetail.css';
 
 export const MediaDetail: React.FC = () => {
@@ -33,9 +32,9 @@ export const MediaDetail: React.FC = () => {
   const [recommendations, setRecommendations] = useState<(TMDBMovie | TMDBTVShow)[]>([]);
   const [loading, setLoading] = useState(true);
   const [frSynopsis, setFrSynopsis] = useState<string | null>(null);
-  const [siteScore, setSiteScore] = useState<{ avg: number; count: number } | null>(null);
 
   const fbNode = isMovie ? 'movieRatings' : 'seriesRatings';
+  const siteScore = useSiteScore(fbNode, numericId || null);
 
   useEffect(() => {
     if (!numericId) return;
@@ -83,18 +82,7 @@ export const MediaDetail: React.FC = () => {
     }
   };
 
-  // Fetch site score from meta
-  useEffect(() => {
-    if (!numericId) return;
-    get(ref(db, `${fbNode}/${numericId}/meta`)).then(snap => {
-      if (snap.exists() && snap.val().avgOverall != null) {
-        const m = snap.val();
-        setSiteScore({ avg: m.avgOverall, count: m.count || 0 });
-      } else {
-        setSiteScore(null);
-      }
-    });
-  }, [numericId, fbNode]);
+  // Site score handled by useSiteScore hook (see above)
 
   if (loading) {
     return <div className="mdetail-container"><Loader /></div>;

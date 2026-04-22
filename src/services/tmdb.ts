@@ -1,6 +1,8 @@
 const TMDB_BASE = 'https://api.themoviedb.org/3';
 const TMDB_KEY = import.meta.env.VITE_TMDB_API_KEY as string;
 
+import { memoFetch } from './cache';
+
 function tmdbUrl(path: string, params: Record<string, string> = {}) {
   const url = new URL(`${TMDB_BASE}${path}`);
   url.searchParams.set('api_key', TMDB_KEY);
@@ -101,9 +103,12 @@ export interface TMDBCredits {
 // ========== Fetch helpers ==========
 
 async function tmdbFetch<T>(path: string, params: Record<string, string> = {}): Promise<T> {
-  const res = await fetch(tmdbUrl(path, params));
-  if (!res.ok) throw new Error(`TMDB ${res.status}`);
-  return res.json();
+  const key = `tmdb:${path}:${new URLSearchParams(params).toString()}`;
+  return memoFetch(key, async () => {
+    const res = await fetch(tmdbUrl(path, params));
+    if (!res.ok) throw new Error(`TMDB ${res.status}`);
+    return res.json() as Promise<T>;
+  });
 }
 
 // ========== Movies ==========

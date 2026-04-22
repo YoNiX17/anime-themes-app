@@ -336,7 +336,7 @@ export const PublicProfile: React.FC = () => {
         <div className="pp-hero glass-panel">
           <div className="pp-avatar">
             {avatarUrl ? (
-              <img src={avatarUrl} alt="Avatar" className="pp-avatar-img" />
+              <img loading="lazy" src={avatarUrl} alt="Avatar" className="pp-avatar-img" />
             ) : (
               <UserIcon size={40} />
             )}
@@ -378,7 +378,7 @@ export const PublicProfile: React.FC = () => {
                   return (
                     <div key={g.anime} className="pp-anime-row glass-panel">
                       <span className="pp-rank">#{i + 1}</span>
-                      {g.latestCover && <img src={g.latestCover} alt="" className="pp-anime-cover" />}
+                      {g.latestCover && <img loading="lazy" src={g.latestCover} alt="" className="pp-anime-cover" />}
                       <div className="pp-anime-info">
                         <span className="pp-anime-name">{g.anime}</span>
                         <span className="pp-anime-sub">{g.entries.length} saison{g.entries.length > 1 ? 's' : ''}</span>
@@ -434,7 +434,7 @@ export const PublicProfile: React.FC = () => {
                     <div key={r.id} className="pp-media-row glass-panel">
                       <span className="pp-rank">#{i + 1}</span>
                       {r.posterPath ? (
-                        <img src={tmdbImage(r.posterPath, 'w92')} alt="" className="pp-media-poster" />
+                        <img loading="lazy" src={tmdbImage(r.posterPath, 'w92')} alt="" className="pp-media-poster" />
                       ) : (
                         <div className="pp-media-placeholder" />
                       )}
@@ -463,7 +463,7 @@ export const PublicProfile: React.FC = () => {
                     <div key={r.id} className="pp-media-row glass-panel">
                       <span className="pp-rank">#{i + 1}</span>
                       {r.posterPath ? (
-                        <img src={tmdbImage(r.posterPath, 'w92')} alt="" className="pp-media-poster" />
+                        <img loading="lazy" src={tmdbImage(r.posterPath, 'w92')} alt="" className="pp-media-poster" />
                       ) : (
                         <div className="pp-media-placeholder" />
                       )}

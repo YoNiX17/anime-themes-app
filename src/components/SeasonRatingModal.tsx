@@ -108,7 +108,7 @@ export const SeasonRatingModal: React.FC<SeasonRatingModalProps> = ({ franchise,
                 <div className="srm-season-check">
                   {checked.has(anime.id) && <Check size={14} />}
                 </div>
-                {cover && <img src={cover} alt="" className="srm-season-thumb" />}
+                {cover && <img loading="lazy" src={cover} alt="" className="srm-season-thumb" />}
                 <div className="srm-season-info">
                   <span className="srm-season-name">{anime.name}</span>
                   <span className="srm-season-year">{anime.year}</span>

@@ -22,6 +22,7 @@ import type {
 import { fetchAniListCharacters } from '../services/anilist';
 import type { AniListCharacter } from '../services/anilist';
 import { getAnimeName } from '../utils/animeGrouping';
+import { useSiteScore } from '../hooks/useSiteScore';
 import './AnimeDetail.css';
 
 const STATUS_FR: Record<string, string> = {
@@ -33,6 +34,8 @@ const STATUS_FR: Record<string, string> = {
 const SEASON_FR: Record<string, string> = {
   winter: 'Hiver', spring: 'Printemps', summer: 'Été', fall: 'Automne',
 };
+
+const ANIME_RATING_KEYS = ['plot', 'characters', 'animation', 'ost', 'pacing'] as const;
 
 export const AnimeDetail: React.FC = () => {
   const { name } = useParams<{ name: string }>();
@@ -50,8 +53,9 @@ export const AnimeDetail: React.FC = () => {
   const [showPlayer, setShowPlayer] = useState(false);
   const [selectedCharacter, setSelectedCharacter] = useState<AniListCharacter | null>(null);
   const [hasUserRating, setHasUserRating] = useState(false);
-  const [siteScore, setSiteScore] = useState<{ avg: number; count: number } | null>(null);
   const [frenchSynopsis, setFrenchSynopsis] = useState<string | null>(null);
+
+  const siteScore = useSiteScore('ratings', anime?.id, ANIME_RATING_KEYS);
 
   useEffect(() => {
     if (!name) return;
@@ -70,33 +74,7 @@ export const AnimeDetail: React.FC = () => {
     });
   }, [user, anime]);
 
-  // Fetch site score from meta (lightweight, no full data read)
-  useEffect(() => {
-    if (!anime) { setSiteScore(null); return; }
-
-    // Try pre-computed meta first
-    get(ref(db, `ratings/${anime.id}/meta`)).then(async (metaSnap) => {
-      if (metaSnap.exists() && metaSnap.val().avgOverall != null) {
-        const meta = metaSnap.val();
-        setSiteScore({ avg: meta.avgOverall, count: meta.count || 0 });
-        return;
-      }
-
-      // Fallback: compute from this anime's user scores only
-      const usersSnap = await get(ref(db, `ratings/${anime.id}/users`));
-      if (!usersSnap.exists()) { setSiteScore(null); return; }
-
-      const entries = Object.values(usersSnap.val()) as Record<string, number>[];
-      const count = entries.length;
-      if (count === 0) { setSiteScore(null); return; }
-
-      let total = 0;
-      entries.forEach((e: Record<string, number>) => {
-        total += ((e.plot || 0) + (e.characters || 0) + (e.animation || 0) + (e.ost || 0) + (e.pacing || 0)) / 5;
-      });
-      setSiteScore({ avg: total / count, count });
-    });
-  }, [anime]);
+  // Fetch site score from meta (lightweight, no full data read) — handled by useSiteScore above
 
   const loadAnimeData = async (animeName: string) => {
     setLoading(true);

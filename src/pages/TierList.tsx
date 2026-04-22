@@ -193,7 +193,7 @@ export const TierList: React.FC = () => {
                       row.items.map(item => (
                         <div key={item.id} className="tl-item" title={`${item.name} (${item.score})`}>
                           {item.coverImage ? (
-                            <img src={item.coverImage} alt={item.name} className="tl-item-img" />
+                            <img loading="lazy" src={item.coverImage} alt={item.name} className="tl-item-img" />
                           ) : (
                             <div className="tl-item-placeholder">
                               <span className="tl-item-initial">{item.name.charAt(0)}</span>

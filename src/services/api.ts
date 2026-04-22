@@ -137,6 +137,8 @@ export interface JikanEpisode {
   recap: boolean;
 }
 
+import { memoFetch } from './cache';
+
 const JIKAN_BASE = 'https://api.jikan.moe/v4';
 
 // Jikan rate limiter — serializes requests to respect the 3 req/s limit
@@ -154,110 +156,126 @@ const jikanFetch = async (url: string): Promise<Response> => {
 /**
  * Fetch full anime details from Jikan by MAL ID
  */
-export const fetchJikanAnimeDetail = async (malId: number): Promise<JikanAnimeDetail | null> => {
-  try {
-    const res = await jikanFetch(`${JIKAN_BASE}/anime/${malId}/full`);
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.data || null;
-  } catch {
-    return null;
-  }
-};
+export const fetchJikanAnimeDetail = (malId: number): Promise<JikanAnimeDetail | null> =>
+  memoFetch(`jikan:detail:${malId}`, async () => {
+    try {
+      const res = await jikanFetch(`${JIKAN_BASE}/anime/${malId}/full`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      return (data.data as JikanAnimeDetail) || null;
+    } catch {
+      return null;
+    }
+  });
 
 /**
  * Fetch anime staff from Jikan (directors, composers, etc.)
  */
-export const fetchJikanStaff = async (malId: number): Promise<JikanStaffEntry[]> => {
-  try {
-    const res = await jikanFetch(`${JIKAN_BASE}/anime/${malId}/staff`);
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data.data || [];
-  } catch {
-    return [];
-  }
-};
+export const fetchJikanStaff = (malId: number): Promise<JikanStaffEntry[]> =>
+  memoFetch(`jikan:staff:${malId}`, async () => {
+    try {
+      const res = await jikanFetch(`${JIKAN_BASE}/anime/${malId}/staff`);
+      if (!res.ok) return [];
+      const data = await res.json();
+      return (data.data as JikanStaffEntry[]) || [];
+    } catch {
+      return [];
+    }
+  });
 
 /**
  * Fetch anime recommendations from Jikan
  */
-export const fetchJikanRecommendations = async (malId: number): Promise<JikanRecommendation[]> => {
-  try {
-    const res = await jikanFetch(`${JIKAN_BASE}/anime/${malId}/recommendations`);
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data.data || [];
-  } catch {
-    return [];
-  }
-};
+export const fetchJikanRecommendations = (malId: number): Promise<JikanRecommendation[]> =>
+  memoFetch(`jikan:recs:${malId}`, async () => {
+    try {
+      const res = await jikanFetch(`${JIKAN_BASE}/anime/${malId}/recommendations`);
+      if (!res.ok) return [];
+      const data = await res.json();
+      return (data.data as JikanRecommendation[]) || [];
+    } catch {
+      return [];
+    }
+  });
 
 /**
  * Fetch anime episodes from Jikan
  */
-export const fetchJikanEpisodes = async (malId: number, page = 1): Promise<{ episodes: JikanEpisode[]; hasMore: boolean }> => {
-  try {
-    const res = await jikanFetch(`${JIKAN_BASE}/anime/${malId}/episodes?page=${page}`);
-    if (!res.ok) return { episodes: [], hasMore: false };
-    const data = await res.json();
-    return {
-      episodes: data.data || [],
-      hasMore: data.pagination?.has_next_page || false,
-    };
-  } catch {
-    return { episodes: [], hasMore: false };
-  }
-};
+export const fetchJikanEpisodes = (malId: number, page = 1): Promise<{ episodes: JikanEpisode[]; hasMore: boolean }> =>
+  memoFetch(`jikan:episodes:${malId}:${page}`, async () => {
+    try {
+      const res = await jikanFetch(`${JIKAN_BASE}/anime/${malId}/episodes?page=${page}`);
+      if (!res.ok) return { episodes: [], hasMore: false };
+      const data = await res.json();
+      return {
+        episodes: (data.data as JikanEpisode[]) || [],
+        hasMore: data.pagination?.has_next_page || false,
+      };
+    } catch {
+      return { episodes: [] as JikanEpisode[], hasMore: false };
+    }
+  });
 
 /**
- * Translate text to French using MyMemory API (free tier, ~500 chars/request)
+ * Translate text to French using MyMemory API (free tier, ~500 chars/request).
+ * Cached + chunks translated in parallel (previous impl was sequential).
  */
-export const translateToFrench = async (text: string): Promise<string> => {
-  if (!text) return '';
-  try {
-    const MAX_CHUNK = 450;
-    const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
-    const chunks: string[] = [];
-    let current = '';
-    for (const s of sentences) {
-      if ((current + s).length > MAX_CHUNK && current) {
-        chunks.push(current.trim());
-        current = s;
-      } else {
-        current += s;
+export const translateToFrench = (text: string): Promise<string> => {
+  if (!text) return Promise.resolve('');
+  // Cache key: short hash-ish of text to avoid unbounded keys.
+  // We use the first 120 chars + length; good enough for idempotent inputs.
+  const cacheKey = `mymemory:fr:${text.length}:${text.slice(0, 120)}`;
+  return memoFetch(cacheKey, async () => {
+    try {
+      const MAX_CHUNK = 450;
+      const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+      const chunks: string[] = [];
+      let current = '';
+      for (const s of sentences) {
+        if ((current + s).length > MAX_CHUNK && current) {
+          chunks.push(current.trim());
+          current = s;
+        } else {
+          current += s;
+        }
       }
-    }
-    if (current.trim()) chunks.push(current.trim());
+      if (current.trim()) chunks.push(current.trim());
 
-    const translated: string[] = [];
-    for (const chunk of chunks) {
-      const res = await fetch(
-        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(chunk)}&langpair=en|fr`
+      const translated = await Promise.all(
+        chunks.map(async (chunk) => {
+          try {
+            const res = await fetch(
+              `https://api.mymemory.translated.net/get?q=${encodeURIComponent(chunk)}&langpair=en|fr`
+            );
+            if (!res.ok) return chunk;
+            const data = await res.json();
+            return data.responseData?.translatedText || chunk;
+          } catch {
+            return chunk;
+          }
+        })
       );
-      if (!res.ok) { translated.push(chunk); continue; }
-      const data = await res.json();
-      translated.push(data.responseData?.translatedText || chunk);
+      return translated.join(' ');
+    } catch {
+      return text;
     }
-    return translated.join(' ');
-  } catch {
-    return text;
-  }
+  }, 30 * 60 * 1000); // 30 minutes
 };
 
 /**
  * Search Jikan by anime name and return the best match's MAL ID
  */
-export const findMalId = async (animeName: string): Promise<number | null> => {
-  try {
-    const res = await jikanFetch(`${JIKAN_BASE}/anime?q=${encodeURIComponent(animeName)}&limit=1`);
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.data?.[0]?.mal_id || null;
-  } catch {
-    return null;
-  }
-};
+export const findMalId = (animeName: string): Promise<number | null> =>
+  memoFetch(`jikan:malid:${animeName.toLowerCase()}`, async () => {
+    try {
+      const res = await jikanFetch(`${JIKAN_BASE}/anime?q=${encodeURIComponent(animeName)}&limit=1`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      return (data.data?.[0]?.mal_id as number) || null;
+    } catch {
+      return null;
+    }
+  });
 
 const BASE_URL = 'https://api.animethemes.moe';
 const THEMES_INCLUDE = 'animethemes.animethemeentries.videos,images';

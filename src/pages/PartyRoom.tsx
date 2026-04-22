@@ -787,7 +787,7 @@ export const PartyRoom: React.FC = () => {
                 </div>
                 {searchResults.map(anime => (
                   <div key={anime.id} className="search-result-item">
-                    {anime.images?.[0] && <img src={anime.images[0].link} alt="" className="search-result-img" />}
+                    {anime.images?.[0] && <img loading="lazy" src={anime.images[0].link} alt="" className="search-result-img" />}
                     <div className="search-result-info">
                       <h4>{anime.name}</h4>
                       <span className="search-result-meta">{anime.year} · {anime.season}</span>

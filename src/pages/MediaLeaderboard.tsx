@@ -111,7 +111,7 @@ export const MediaLeaderboard: React.FC = () => {
                     <div key={item.id} className={`mlb-podium-card glass-panel mlb-podium-${rank}`} onClick={() => navigate(`${section.prefix}/${item.id}`)}>
                       <span className="mlb-medal">{medal}</span>
                       {item.posterPath ? (
-                        <img src={tmdbImage(item.posterPath, 'w185')} alt={item.title} className="mlb-podium-img" />
+                        <img loading="lazy" src={tmdbImage(item.posterPath, 'w185')} alt={item.title} className="mlb-podium-img" />
                       ) : (
                         <div className="mlb-podium-placeholder" />
                       )}
@@ -134,7 +134,7 @@ export const MediaLeaderboard: React.FC = () => {
                     <div key={item.id} className="mlb-row glass-panel" onClick={() => navigate(`${section.prefix}/${item.id}`)}>
                       <span className="mlb-rank">#{rank}</span>
                       {item.posterPath ? (
-                        <img src={tmdbImage(item.posterPath, 'w92')} alt={item.title} className="mlb-row-img" />
+                        <img loading="lazy" src={tmdbImage(item.posterPath, 'w92')} alt={item.title} className="mlb-row-img" />
                       ) : (
                         <div className="mlb-row-placeholder" />
                       )}

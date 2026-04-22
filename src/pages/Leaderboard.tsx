@@ -444,7 +444,7 @@ export const Leaderboard: React.FC = () => {
                       <div key={r.anime} className={`podium-card glass-panel podium-${podiumIdx + 1}`}>
                         <span className="podium-medal">{getMedalEmoji(podiumIdx)}</span>
                         <span className="podium-rank">#{podiumIdx + 1}</span>
-                        {r.coverImage && <img src={r.coverImage} alt="" className="podium-cover" />}
+                        {r.coverImage && <img loading="lazy" src={r.coverImage} alt="" className="podium-cover" />}
                         <h4 className="podium-anime-name">{r.anime}</h4>
                         <div className={`podium-score ${getScoreColor(score)}`}>{score.toFixed(0)}</div>
                         <span className="podium-max">/100</span>
@@ -482,7 +482,7 @@ export const Leaderboard: React.FC = () => {
                   <div className={`lb-table-row lb-anime-grid ${r.seasonCount > 1 ? 'lb-row-expandable' : ''}`} style={{ animationDelay: `${i * 0.03}s` }} onClick={r.seasonCount > 1 ? () => toggleAnime(r.anime) : undefined}>
                     <span className="lb-col-rank">{rank}</span>
                     <div className="lb-col-name">
-                      {r.coverImage && <img src={r.coverImage} alt="" className="lb-row-cover" />}
+                      {r.coverImage && <img loading="lazy" src={r.coverImage} alt="" className="lb-row-cover" />}
                       <div className="lb-name-group">
                         <span className="lb-anime-name">{r.anime}</span>
                         {r.seasonCount > 1 && <span className="lb-season-count">{r.seasonCount} saisons</span>}
@@ -503,7 +503,7 @@ export const Leaderboard: React.FC = () => {
                         const sScore = getAnimeScore(s);
                         return (
                         <div key={s.animeId} className="lb-season-row">
-                          {s.coverImage && <img src={s.coverImage} alt="" className="lb-season-cover" />}
+                          {s.coverImage && <img loading="lazy" src={s.coverImage} alt="" className="lb-season-cover" />}
                           <span className="lb-season-name">{s.animeName}</span>
                           <span className={`lb-season-score ${getScoreColor(sScore)}`}>{sScore.toFixed(0)}</span>
                           <span className="lb-season-votes">{s.count} vote{s.count > 1 ? 's' : ''}</span>
@@ -530,7 +530,7 @@ export const Leaderboard: React.FC = () => {
                       <div key={r.animeId} className={`podium-card glass-panel podium-${podiumIdx + 1}`}>
                         <span className="podium-medal">{getMedalEmoji(podiumIdx)}</span>
                         <span className="podium-rank">#{podiumIdx + 1}</span>
-                        {r.coverImage && <img src={r.coverImage} alt="" className="podium-cover" />}
+                        {r.coverImage && <img loading="lazy" src={r.coverImage} alt="" className="podium-cover" />}
                         <h4 className="podium-anime-name">{r.animeName}</h4>
                         <div className={`podium-score ${getScoreColor(score)}`}>{score.toFixed(0)}</div>
                         <span className="podium-max">/100</span>
@@ -566,7 +566,7 @@ export const Leaderboard: React.FC = () => {
                   <div key={r.animeId} className="lb-table-row lb-anime-grid" style={{ animationDelay: `${i * 0.03}s` }}>
                     <span className="lb-col-rank">{rank}</span>
                     <div className="lb-col-name">
-                      {r.coverImage && <img src={r.coverImage} alt="" className="lb-row-cover" />}
+                      {r.coverImage && <img loading="lazy" src={r.coverImage} alt="" className="lb-row-cover" />}
                       <span className="lb-anime-name">{r.animeName}</span>
                     </div>
                     <span className={`lb-col-cat ${getScoreColor(r.avgPlot)}`}>{r.avgPlot.toFixed(0)}</span>
@@ -602,7 +602,7 @@ export const Leaderboard: React.FC = () => {
                       <div key={r.themeId} className={`podium-card glass-panel podium-${podiumIdx + 1} podium-clickable`} onClick={() => handleThemeClick(r.themeId)}>
                         <span className="podium-medal">{getMedalEmoji(podiumIdx)}</span>
                         <span className="podium-rank">#{podiumIdx + 1}</span>
-                        {r.coverImage && <img src={r.coverImage} alt="" className="podium-cover" />}
+                        {r.coverImage && <img loading="lazy" src={r.coverImage} alt="" className="podium-cover" />}
                         <div className="podium-theme-type">{r.themeType}</div>
                         <h4 className="podium-anime-name">{r.animeName}</h4>
                         <div className={`podium-score ${getScoreColor(score)}`}>{score.toFixed(0)}</div>
